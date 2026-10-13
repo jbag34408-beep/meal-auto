@@ -3,6 +3,7 @@ build/
 .idea/
 *.iml
 out/
+bin/
 
 # H2 파일 DB
 data/

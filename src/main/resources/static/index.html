@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>식단 자동화</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --card: #ffffff; --text: #1f2421; --muted: #6b716d;
+    --line: #e4e0d8; --accent: #2f6f4f; --accent-soft: #e3efe8; --danger: #b4443a;
+    --carb: #d9a441; --protein: #2f6f4f; --fat: #b06a3b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 24px; }
+  h1 { margin: 0; font-size: 26px; letter-spacing: -0.5px; }
+  h2 { margin: 0 0 14px; font-size: 16px; color: var(--muted); font-weight: 600; }
+  input, select, button { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; min-width: 0; }
+  button { background: var(--accent); color: #fff; border: none; cursor: pointer; }
+  button:hover { opacity: 0.9; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .kcal { font-size: 40px; font-weight: 700; letter-spacing: -1px; }
+  .kcal small { font-size: 16px; color: var(--muted); font-weight: 500; }
+  .bars { display: grid; gap: 10px; margin-top: 16px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .bar > div { height: 100%; border-radius: 4px; }
+  .recommend { background: var(--accent-soft); border-color: transparent; }
+  .recommend strong { font-size: 20px; }
+  form { display: grid; gap: 8px; }
+  .meal-form { grid-template-columns: 1fr 1fr 110px auto; }
+  .food-form { grid-template-columns: 2fr repeat(4, 1fr) auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; font-size: 13px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .del { background: none; color: var(--danger); padding: 4px 8px; }
+  .empty { color: var(--muted); text-align: center; padding: 20px; }
+  .error { color: var(--danger); font-size: 14px; margin-top: 8px; min-height: 18px; }
+  @media (max-width: 560px) {
+    .meal-form, .food-form { grid-template-columns: 1fr 1fr; }
+    header { flex-direction: column; align-items: start; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>오늘의 식단</h1>
+    <input type="date" id="date">
+  </header>
+
+  <section class="card">
+    <h2>하루 요약</h2>
+    <div class="kcal"><span id="kcal">0</span> <small>/ 2000 kcal · <span id="count">0</span>끼</small></div>
+    <div class="bars" id="bars"></div>
+  </section>
+
+  <section class="card recommend">
+    <h2>다음 끼니 추천</h2>
+    <div id="recommend">-</div>
+  </section>
+
+  <section class="card">
+    <h2>식사 기록 추가</h2>
+    <form id="mealForm" class="meal-form">
+      <select id="food" required></select>
+      <select id="mealType">
+        <option value="BREAKFAST">아침</option>
+        <option value="LUNCH">점심</option>
+        <option value="DINNER">저녁</option>
+        <option value="SNACK">간식</option>
+      </select>
+      <input type="number" id="grams" placeholder="g" min="1" max="5000" required>
+      <button type="submit">추가</button>
+    </form>
+    <div class="error" id="mealError"></div>
+  </section>
+
+  <section class="card">
+    <h2>음식 등록 (100g 기준)</h2>
+    <form id="foodForm" class="food-form">
+      <input id="foodName" placeholder="이름" required>
+      <input type="number" id="foodKcal" placeholder="kcal" min="0" max="900" step="0.1" required>
+      <input type="number" id="foodCarb" placeholder="탄수화물 g" min="0" max="100" step="0.1" required>
+      <input type="number" id="foodProtein" placeholder="단백질 g" min="0" max="100" step="0.1" required>
+      <input type="number" id="foodFat" placeholder="지방 g" min="0" max="100" step="0.1" required>
+      <button type="submit">등록</button>
+    </form>
+    <div class="error" id="foodError"></div>
+  </section>
+
+  <section class="card">
+    <h2>기록</h2>
+    <table>
+      <thead><tr><th>끼니</th><th>음식</th><th class="num">섭취량</th><th class="num">칼로리</th><th></th></tr></thead>
+      <tbody id="meals"></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+  const MEAL_NAMES = { BREAKFAST: "아침", LUNCH: "점심", DINNER: "저녁", SNACK: "간식" };
+  const TARGETS = [
+    { key: "totalCarbohydrate", name: "탄수화물", target: 300, color: "var(--carb)" },
+    { key: "totalProtein", name: "단백질", target: 60, color: "var(--protein)" },
+    { key: "totalFat", name: "지방", target: 50, color: "var(--fat)" },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const dateInput = $("date");
+
+  // 한국 시간 기준 오늘 날짜 (YYYY-MM-DD)
+  dateInput.value = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+
+  // 서버 에러 응답(ErrorResponse)을 한 줄 문구로 바꾸기
+  async function errorText(res) {
+    try {
+      const err = await res.json();
+      const details = Object.values(err.errors || {}).join(", ");
+      return details || err.message || `요청 실패 (${res.status})`;
+    } catch {
+      return `요청 실패 (${res.status})`;
+    }
+  }
+
+  async function loadFoods() {
+    const foods = await (await fetch("/foods")).json();
+    $("food").innerHTML = foods
+      .map((f) => `<option value="${f.id}">${f.name} (100g당 ${f.kcalPer100g}kcal)</option>`)
+      .join("");
+  }
+
+  async function loadDay() {
+    const date = dateInput.value;
+    const [meals, summary, recText] = await Promise.all([
+      fetch(`/meals?date=${date}`).then((r) => r.json()),
+      fetch(`/summary?date=${date}`).then((r) => r.json()),
+      fetch(`/recommendation?date=${date}`).then((r) => r.text()), // 추천 없으면 빈 응답
+    ]);
+    renderSummary(summary);
+    renderRecommend(recText ? JSON.parse(recText) : null);
+    renderMeals(meals);
+  }
+
+  function renderSummary(s) {
+    $("kcal").textContent = Math.round(s.totalKcal);
+    $("count").textContent = s.mealCount;
+    $("bars").innerHTML = TARGETS.map((t) => {
+      const value = s[t.key];
+      const percent = Math.min(100, (value / t.target) * 100);
+      return `
+        <div>
+          <div class="bar-label"><span>${t.name}</span><span>${value}g / ${t.target}g</span></div>
+          <div class="bar"><div style="width:${percent}%; background:${t.color}"></div></div>
+        </div>`;
+    }).join("");
+  }
+
+  function renderRecommend(rec) {
+    $("recommend").innerHTML = rec
+      ? `<strong>${rec.food.name} ${rec.grams}g</strong><div>${rec.reason}</div>`
+      : "오늘 목표를 모두 채웠어요";
+  }
+
+  function renderMeals(meals) {
+    if (meals.length === 0) {
+      $("meals").innerHTML = `<tr><td colspan="5" class="empty">아직 기록이 없어요</td></tr>`;
+      return;
+    }
+    $("meals").innerHTML = meals.map((m) => `
+      <tr>
+        <td>${MEAL_NAMES[m.mealType]}</td>
+        <td>${m.food.name}</td>
+        <td class="num">${m.grams}g</td>
+        <td class="num">${Math.round(m.food.kcalPer100g * m.grams / 100)}kcal</td>
+        <td class="num"><button class="del" onclick="deleteMeal(${m.id})">삭제</button></td>
+      </tr>`).join("");
+  }
+
+  async function deleteMeal(id) {
+    if (!confirm("이 기록을 삭제할까요?")) return;
+    await fetch(`/meals/${id}`, { method: "DELETE" });
+    loadDay();
+  }
+
+  // 식사 기록 추가
+  $("mealForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("mealError").textContent = "";
+    const res = await fetch("/meals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date: dateInput.value,
+        mealType: $("mealType").value,
+        foodId: Number($("food").value),
+        grams: Number($("grams").value),
+      }),
+    });
+    if (!res.ok) {
+      $("mealError").textContent = await errorText(res);
+      return;
+    }
+    $("grams").value = "";
+    loadDay();
+  });
+
+  // 음식 등록
+  $("foodForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("foodError").textContent = "";
+    const res = await fetch("/foods", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: $("foodName").value,
+        kcalPer100g: Number($("foodKcal").value),
+        carbohydrate: Number($("foodCarb").value),
+        protein: Number($("foodProtein").value),
+        fat: Number($("foodFat").value),
+      }),
+    });
+    if (!res.ok) {
+      $("foodError").textContent = await errorText(res);
+      return;
+    }
+    const food = await res.json();
+    $("foodForm").reset();
+    await loadFoods();
+    $("food").value = food.id;   // 방금 등록한 음식을 기록 추가 칸에서 바로 선택
+  });
+
+  dateInput.addEventListener("change", loadDay);
+
+  loadFoods().then(loadDay);
+</script>
+</body>
+</html>
