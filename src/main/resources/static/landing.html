@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="ko" class="no-stage">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>식단 자동화</title>
+<meta name="description" content="먹은 음식을 기록하면 영양을 계산하고 다음 끼니를 추천해요.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0f1311; --ink: #ecefe9; --muted: #a3aca6; --line: rgba(236, 239, 233, 0.14);
+    /* 세 가닥 색은 앱(index.html)과 같은 값, 글자용은 어두운 바탕에서 읽히도록 밝힌 값 */
+    --carb: #d9a441; --protein: #2f6f4f; --fat: #b06a3b;
+    --carb-ink: #e2b25a; --protein-ink: #7fbf9c; --fat-ink: #d98e5f;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --gutter: clamp(20px, 5vw, 72px);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); scrollbar-color: #3a443e var(--bg); }
+  body {
+    margin: 0; position: relative; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 17px; line-height: 1.6; word-break: keep-all; -webkit-font-smoothing: antialiased;
+  }
+  p { text-wrap: pretty; }
+  ::selection { background: var(--carb); color: var(--bg); }
+  a:focus-visible { outline: 2px solid var(--carb-ink); outline-offset: 4px; }
+
+  #stage { position: fixed; inset: 0; width: 100%; height: 100vh; height: 100lvh; display: block; z-index: 0; }
+  main { position: relative; z-index: 1; }
+  section { padding: 0 var(--gutter); }
+
+  /* 첫 화면 */
+  .hero { min-height: 100vh; min-height: 100svh; position: relative; padding-top: clamp(28px, 6vh, 72px); }
+  h1 {
+    margin: 0; font-size: clamp(56px, 10.5vw, 148px); font-weight: 800; line-height: 0.98;
+    letter-spacing: -0.04em;
+  }
+  .lede { margin: clamp(14px, 2vh, 22px) 0 0; max-width: 24ch; font-size: clamp(17px, 1.6vw, 21px); color: var(--muted); }
+  .scroll-hint {
+    position: absolute; left: 50%; bottom: clamp(20px, 4vh, 40px); transform: translateX(-50%);
+    margin: 0; display: grid; justify-items: center; gap: 10px; font-size: 14px; color: var(--muted);
+  }
+  .scroll-hint i { display: block; width: 1px; height: 36px; background: linear-gradient(var(--muted), transparent);
+                   transform-origin: top; animation: hint 2.4s var(--ease-out) infinite; }
+  @keyframes hint { 0% { transform: scaleY(0); opacity: 1; } 70% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
+
+  /* WebGL을 쓸 수 없을 때 첫 화면에 남기는 세 고리 */
+  .fallback { display: none; position: absolute; left: 50%; top: 56%; width: min(64vw, 360px); aspect-ratio: 1.4;
+              transform: translate(-50%, -50%); }
+  .fallback span { position: absolute; top: 0; width: 58%; aspect-ratio: 1; border-radius: 50%; border: 10px solid; opacity: 0.9; }
+  .fallback span:nth-child(1) { left: 0; border-color: var(--carb); }
+  .fallback span:nth-child(2) { left: 21%; top: 26%; border-color: var(--protein); }
+  .fallback span:nth-child(3) { left: 42%; border-color: var(--fat); }
+  .no-stage .fallback { display: block; }
+  .no-stage #stage { display: none; }
+
+  /* 매듭이 풀리는 구간 */
+  .unravel { min-height: 100vh; min-height: 100svh; padding-top: clamp(28px, 8vh, 96px); padding-bottom: 72px; }
+  .unravel h2, .features h2, .cta h2 {
+    margin: 0; font-size: clamp(32px, 4.6vw, 60px); font-weight: 750; line-height: 1.12; letter-spacing: -0.03em;
+  }
+  .unravel .sub { margin: 12px 0 0; max-width: 30ch; color: var(--muted); }
+  .strands { list-style: none; margin: 48px 0 0; padding: 0; display: grid; gap: 28px; max-width: 34ch; }
+  .strand h3 { margin: 0; display: inline-block; font-size: 22px; font-weight: 700; color: var(--c-ink);
+               padding-bottom: 4px; border-bottom: 2px solid var(--c); }
+  .strand p { margin: 8px 0 0; color: var(--muted); }
+  .strand strong { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* 3D가 돌아갈 때: 설명은 화면에 고정된 채 각 고리 옆에 붙음 */
+  .stage .strands { margin: 0; max-width: none; }
+  .stage .strand { position: fixed; left: 0; top: 0; z-index: 2; opacity: 0; pointer-events: none;
+                      will-change: transform, opacity; }
+  .stage:not(.portrait) .strand { text-align: center; }
+
+  /* 기능 소개 */
+  .features { padding-top: clamp(120px, 22vh, 220px); padding-bottom: clamp(80px, 14vh, 160px); max-width: 1320px; margin: 0 auto; }
+  .feature-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: clamp(72px, 12vh, 128px) 32px; margin-top: clamp(56px, 9vh, 96px); }
+  .feature h3 { margin: 0; font-size: clamp(22px, 2vw, 27px); font-weight: 700; letter-spacing: -0.02em; }
+  .feature > p { margin: 10px 0 0; max-width: 36ch; color: var(--muted); }
+  .feature .basis { margin: 28px 0 10px; font-size: 14px; color: var(--muted); }
+  .f-calc { grid-column: 1 / span 7; }
+  .f-rec { grid-column: 6 / -1; }
+  .f-report { grid-column: 1 / -1; border-top: 1px solid var(--line); padding-top: clamp(40px, 6vh, 64px);
+              display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px 32px; }
+  .f-report .text { grid-column: 1 / span 4; }
+  .f-report .log-wrap { grid-column: 5 / -1; min-width: 0; }
+  .f-report .text p { margin: 10px 0 0; max-width: 36ch; color: var(--muted); }
+
+  .sum { font-variant-numeric: tabular-nums; max-width: 560px; }
+  .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .rows li { display: grid; grid-template-columns: 7.5em 1fr auto; gap: 14px; align-items: baseline; }
+  .rows .how { color: var(--muted); font-size: 15px; }
+  .rows .how:empty { display: none; }
+  .rows li > span:last-child { text-align: right; }
+  .rows .total { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line);
+                 font-size: clamp(24px, 2.6vw, 32px); font-weight: 800; letter-spacing: -0.02em; }
+  .macros { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 14px 0 0; padding: 0; list-style: none; }
+  .macros li { color: var(--c-ink); font-weight: 600; }
+
+  .chain { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-variant-numeric: tabular-nums; max-width: 460px; }
+  .chain li { display: grid; grid-template-columns: 5em 1fr 3.2em; align-items: center; gap: 14px; color: var(--muted); }
+  .chain li b { display: block; height: 6px; width: var(--w); border-radius: 3px; background: var(--c); }
+  .chain li span:last-child { text-align: right; }
+  .chain li.pick { color: var(--ink); font-weight: 650; }
+  .feature .result { color: var(--ink); margin: 22px 0 0; font-size: clamp(36px, 4.4vw, 56px); font-weight: 800; letter-spacing: -0.035em; line-height: 1.05; }
+  .feature .result + p { margin: 8px 0 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .log { margin: 0; padding: 18px 0 0; border-top: 1px solid var(--line);
+         font: 14px/1.75 ui-monospace, "Cascadia Mono", Consolas, "D2Coding", monospace; color: #cfd6d1;
+         white-space: pre-wrap; word-break: break-all; }
+  .log .t { color: var(--muted); }
+
+  /* 마지막 */
+  .cta { min-height: 100vh; min-height: 100svh; display: grid; align-content: end; padding-bottom: clamp(48px, 12vh, 120px); }
+  .cta p { margin: 14px 0 0; color: var(--muted); }
+  .button {
+    display: inline-flex; align-items: center; justify-content: center; margin-top: 32px; width: fit-content;
+    min-height: 56px; padding: 0 34px; border-radius: 999px; background: var(--ink); color: var(--bg);
+    font-size: 18px; font-weight: 700; text-decoration: none; white-space: nowrap;
+    transition: transform 200ms var(--ease-out), background-color 200ms;
+  }
+  .button:hover { background: #ffffff; transform: translateY(-2px); }
+  .button:active { transform: translateY(0) scale(0.98); }
+
+  @media (max-width: 760px) {
+    body { font-size: 16px; }
+    .f-calc, .f-rec, .f-report, .f-report .text, .f-report .log-wrap { grid-column: 1 / -1; }
+    .f-report { grid-template-columns: minmax(0, 1fr); }
+    .log { font-size: 13px; }
+    .rows li { grid-template-columns: 1fr auto; }
+    .rows .how { grid-column: 1; grid-row: 2; font-size: 13px; margin-top: -6px; }
+    .stage .strand h3 { font-size: 18px; }
+    .stage .strand p { font-size: 14px; line-height: 1.5; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-hint i { animation: none; }
+    .button { transition: none; }
+  }
+  /* 움직임을 줄이면 3D는 첫 화면의 정지 이미지로만 남음 */
+</style>
+</head>
+<body>
+<canvas id="stage" aria-hidden="true"></canvas>
+
+<main>
+  <section class="hero">
+    <h1>식단 자동화</h1>
+    <p class="lede">먹은 음식을 기록하면 영양을 계산하고 다음 끼니를 추천해요.</p>
+    <div class="fallback" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="scroll-hint"><span>스크롤해 보세요</span><i aria-hidden="true"></i></p>
+  </section>
+
+  <section class="unravel" id="unravel" aria-labelledby="unravelTitle">
+    <h2 id="unravelTitle">하루 식단은 세 가닥이에요</h2>
+    <p class="sub">매듭을 풀면 탄수화물, 단백질, 지방이 각자의 목표를 가져요.</p>
+    <ol class="strands">
+      <li class="strand" style="--c: var(--carb); --c-ink: var(--carb-ink)">
+        <h3>탄수화물</h3>
+        <p>쌀밥 100g에는 <strong>45g</strong>이 들어 있어요. 먹은 양에 맞춰 비율로 계산해요.</p>
+      </li>
+      <li class="strand" style="--c: var(--protein); --c-ink: var(--protein-ink)">
+        <h3>단백질</h3>
+        <p>닭가슴살 100g에는 <strong>23g</strong>. 하루 목표는 회원마다 따로 정해요.</p>
+      </li>
+      <li class="strand" style="--c: var(--fat); --c-ink: var(--fat-ink)">
+        <h3>지방</h3>
+        <p>아몬드 100g에는 <strong>50g</strong>. 가장 부족한 영양소부터 채우도록 추천해요.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="features" aria-labelledby="featuresTitle">
+    <h2 id="featuresTitle">세 가지를 자동으로 해요</h2>
+    <div class="feature-grid">
+      <article class="feature f-calc">
+        <h3>영양 자동 계산</h3>
+        <p>음식과 양만 고르면 100g 기준 값을 먹은 양으로 환산해 하루 합계를 내요.</p>
+        <p class="basis">demo 계정의 하루 기록 예시</p>
+        <div class="sum">
+          <ul class="rows">
+            <li><span>바나나 120g</span><span class="how">100g당 90kcal × 1.2</span><span>108kcal</span></li>
+            <li><span>쌀밥 150g</span><span class="how">100g당 200kcal × 1.5</span><span>300kcal</span></li>
+            <li><span>닭가슴살 200g</span><span class="how">100g당 110kcal × 2</span><span>220kcal</span></li>
+            <li class="total"><span>하루 합계</span><span class="how"></span><span>628kcal</span></li>
+          </ul>
+          <ul class="macros">
+            <li style="--c-ink: var(--carb-ink)">탄수화물 95.1g</li>
+            <li style="--c-ink: var(--protein-ink)">단백질 53.2g</li>
+            <li style="--c-ink: var(--fat-ink)">지방 3.1g</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="feature f-rec">
+        <h3>다음 끼니 추천</h3>
+        <p>목표 대비 가장 부족한 영양소를 찾고, 그 영양소가 가장 많은 음식과 양을 골라요. 남은 칼로리는 넘지 않아요.</p>
+        <p class="basis">같은 하루, 목표 대비 부족한 비율</p>
+        <ul class="chain">
+          <li style="--c: var(--carb); --w: 68%"><span>탄수화물</span><b></b><span>68%</span></li>
+          <li style="--c: var(--protein); --w: 11%"><span>단백질</span><b></b><span>11%</span></li>
+          <li class="pick" style="--c: var(--fat); --w: 94%"><span>지방</span><b></b><span>94%</span></li>
+        </ul>
+        <p class="result">아몬드 94g</p>
+        <p>지방 46.9g ÷ 100g당 50g × 100 = 94g</p>
+      </article>
+
+      <article class="feature f-report">
+        <div class="text">
+          <h3>매일 자동 리포트</h3>
+          <p>매일 밤 9시(한국 시간), 회원마다 그날의 요약과 추천을 서버 로그로 남겨요.</p>
+        </div>
+        <div class="log-wrap">
+          <p class="basis">서버 로그 예시</p>
+          <pre class="log"><span class="t">21:00</span> [demo / 2026-10-13 요약] 식사 3회, 628.0 / 2000.0 kcal, 탄수화물 95.1g, 단백질 53.2g, 지방 3.1g
+<span class="t">21:00</span> [demo 추천] 아몬드 94.0g - 지방이 목표보다 46.9g 부족해요</pre>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="cta" aria-labelledby="ctaTitle">
+    <h2 id="ctaTitle">오늘 먹은 것부터 적어 보세요</h2>
+    <p>체험용 계정 demo / demo1234로 바로 둘러볼 수 있어요.</p>
+    <a class="button" href="/login.html">시작하기</a>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+  import * as THREE from "three";
+  import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+  const root = document.documentElement;
+  const { gsap, ScrollTrigger } = window;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const small = matchMedia("(max-width: 760px)").matches;
+  const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  init();
+
+  function init() {
+    const canvas = document.getElementById("stage");
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+    } catch {
+      return;   // WebGL이 없으면 글과 버튼만 있는 페이지로 남음
+    }
+    const animated = !reduce && !!gsap && !!ScrollTrigger;
+    root.classList.remove("no-stage");
+    root.classList.add("stage", animated ? "animated" : "still");
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, small ? 1.5 : 1.75));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const BG = 0x0f1311;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(BG);
+    scene.fog = new THREE.Fog(BG, 10, 20);
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 60);
+    camera.position.set(0, 1.2, 9);
+    camera.lookAt(0, -0.25, 0);
+
+    // 바닥: 세 조명의 그림자가 섞이는 곳
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(60, 60),
+      new THREE.MeshStandardMaterial({ color: 0x161c19, roughness: 0.62, metalness: 0.2 }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -1.8;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    scene.add(new THREE.HemisphereLight(0xb9c9c0, 0x0f1311, 0.35));
+    const shadowSize = small ? 512 : 1024;
+    const spot = (color, intensity, x, y, z) => {
+      const light = new THREE.SpotLight(color, intensity, 0, 0.55, 0.8, 0);
+      light.position.set(x, y, z);
+      light.target.position.set(0, -0.6, 0);
+      light.castShadow = true;
+      light.shadow.mapSize.set(shadowSize, shadowSize);
+      light.shadow.bias = -0.0004;
+      light.shadow.camera.near = 2;
+      light.shadow.camera.far = 20;
+      scene.add(light, light.target);
+      return light;
+    };
+    spot(0xd9a441, 2.6, -4.2, 6.2, 3.2);   // 탄수화물
+    spot(0x2f6f4f, 7.5, 4.4, 6.6, 2.2);    // 단백질 (어두운 초록이라 더 세게)
+    spot(0xb06a3b, 2.8, 0.6, 5.6, -4.6);   // 지방 (뒤에서 비추는 테두리 빛)
+
+    // 세 가닥: 하나의 매듭 중심선을 공유하고 그 둘레를 꼬며 돈다
+    const SEG = small ? 240 : 360, RAD = small ? 10 : 12, TUBE = 0.105, TWIST = 6, R0 = 0.16, RING = 0.52, OPEN_R = 1.2;
+    const COLORS = [0xd9a441, 0x2f6f4f, 0xb06a3b];
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const index = [];
+    for (let j = 0; j < SEG; j++) {
+      const jn = (j + 1) % SEG;
+      for (let k = 0; k < RAD; k++) {
+        const kn = (k + 1) % RAD;
+        const a = j * RAD + k, b = jn * RAD + k, c = jn * RAD + kn, d = j * RAD + kn;
+        index.push(a, d, b, b, d, c);
+      }
+    }
+    const strands = COLORS.map((color) => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(SEG * RAD * 3), 3));
+      geometry.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(SEG * RAD * 3), 3));
+      geometry.setIndex(index);
+      const material = new THREE.MeshPhysicalMaterial({
+        color, metalness: 0.45, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.95, side: THREE.DoubleSide });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.frustumCulled = false;
+      group.add(mesh);
+      return mesh;
+    });
+
+    const center = Array.from({ length: SEG }, () => new THREE.Vector3());
+    const T = center.map(() => new THREE.Vector3());
+    const N = center.map(() => new THREE.Vector3());
+    const B = center.map(() => new THREE.Vector3());
+    const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), knotP = new THREE.Vector3();
+    let slots = [];
+
+    function knot(t, out) {   // (2,3) 토러스 매듭
+      const u = t * Math.PI * 4, cs = Math.cos(1.5 * u);
+      return out.set((2 + cs) * 0.5 * Math.cos(u), (2 + cs) * 0.5 * Math.sin(u), Math.sin(1.5 * u) * 0.5);
+    }
+
+    function build(u, intro) {
+      const open = smooth(0.08, 0.5, u);                  // 매듭이 큰 고리로 열림
+      const apart = smooth(0.3, 0.75, u);                 // 세 가닥이 서로 떨어짐
+      const loosen = Math.sin(Math.PI * Math.min(u / 0.45, 1)) * 0.3;
+      const rho = (R0 + 0.2 * loosen + 0.85 * intro) * (1 - smooth(0.45, 0.9, u));
+      // 고리는 매듭과 비슷한 크기로 연 뒤에 줄여야 급하게 꺾이며 관이 뒤집히지 않음
+      const shrink = lerp(1, RING / OPEN_R, smooth(0.25, 0.62, u));
+
+      for (let j = 0; j < SEG; j++) {
+        const t = j / SEG;
+        knot(t, knotP);
+        center[j].set(OPEN_R * Math.cos(t * Math.PI * 2), OPEN_R * Math.sin(t * Math.PI * 2), 0)
+            .lerp(knotP, 1 - open).multiplyScalar(shrink);
+      }
+      // 평행 이동 프레임 (닫힌 곡선 이음매의 비틀림은 전체에 나눠 줌)
+      for (let j = 0; j < SEG; j++) T[j].subVectors(center[(j + 1) % SEG], center[(j - 1 + SEG) % SEG]).normalize();
+      tmp.set(0, 0, 1);
+      if (Math.abs(T[0].dot(tmp)) > 0.9) tmp.set(1, 0, 0);
+      N[0].crossVectors(T[0], tmp).normalize();
+      for (let j = 1; j < SEG; j++) N[j].copy(N[j - 1]).addScaledVector(T[j], -N[j - 1].dot(T[j])).normalize();
+      tmp.copy(N[SEG - 1]).addScaledVector(T[0], -N[SEG - 1].dot(T[0])).normalize();
+      const seam = Math.atan2(tmp2.crossVectors(tmp, N[0]).dot(T[0]), tmp.dot(N[0]));
+      for (let j = 0; j < SEG; j++) {
+        N[j].applyAxisAngle(T[j], seam * j / SEG);
+        B[j].crossVectors(T[j], N[j]);
+      }
+
+      strands.forEach((mesh, i) => {
+        const pos = mesh.geometry.attributes.position.array, nor = mesh.geometry.attributes.normal.array;
+        const slot = slots[i];
+        let p = 0;
+        for (let j = 0; j < SEG; j++) {
+          const phi = (i * 2 * Math.PI) / 3 + TWIST * 2 * Math.PI * (j / SEG);
+          const cx = center[j].x + rho * (N[j].x * Math.cos(phi) + B[j].x * Math.sin(phi)) + slot.x * apart;
+          const cy = center[j].y + rho * (N[j].y * Math.cos(phi) + B[j].y * Math.sin(phi)) + slot.y * apart;
+          const cz = center[j].z + rho * (N[j].z * Math.cos(phi) + B[j].z * Math.sin(phi)) + slot.z * apart;
+          for (let k = 0; k < RAD; k++) {
+            const a = (k / RAD) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+            const nx = N[j].x * ca + B[j].x * sa, ny = N[j].y * ca + B[j].y * sa, nz = N[j].z * ca + B[j].z * sa;
+            pos[p] = cx + TUBE * nx; nor[p++] = nx;
+            pos[p] = cy + TUBE * ny; nor[p++] = ny;
+            pos[p] = cz + TUBE * nz; nor[p++] = nz;
+          }
+        }
+        mesh.geometry.attributes.position.needsUpdate = true;
+        mesh.geometry.attributes.normal.needsUpdate = true;
+      });
+    }
+
+    // 화면 비율에 맞춘 크기와, 풀린 세 고리가 놓일 자리
+    const BASE_Y = -0.3;
+    let fit = 1, portrait = false, ringGap = 300, ctaShift = new THREE.Vector2();
+    function layout() {
+      const w = window.innerWidth, h = window.innerHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      portrait = camera.aspect < 0.8;
+      fit = portrait ? Math.max(0.6, camera.aspect / 0.7) : Math.min(0.8, camera.aspect / 1.4);
+      // 세로 화면: 왼쪽에 세로로 쌓고 설명은 오른쪽 / 가로 화면: 가로로 늘어놓고 설명은 아래
+      // (자리는 그룹 좌표라 fit으로 나눠 실제 화면 위치를 맞춤, 기준 높이 BASE_Y 포함)
+      const place = (wx, wy) => new THREE.Vector3(wx / fit, (wy - BASE_Y) / fit, 0);
+      slots = portrait
+          ? [place(-0.63, 0.79), place(-0.63, -0.28), place(-0.63, -1.35)]
+          : [place(-1.8, -0.14), place(0, -0.14), place(1.8, -0.14)];
+      ctaShift.set(portrait ? 0 : 1.35, portrait ? 0.75 : 0.1);
+      ringGap = (1.8 * h) / (2 * camera.position.length() * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+      root.classList.toggle("portrait", portrait);
+    }
+
+    const state = { u: 0, back: 0, fade: 0, fadeBack: 0, intro: animated ? 1 : 0 };
+    const captions = [...document.querySelectorAll(".strand")];
+    const THRESH = [0.76, 0.83, 0.9];
+    let spin = 0, last = -1, lastIntro = -1, raf = 0, prev = performance.now();
+    const ringPoint = new THREE.Vector3(), edgePoint = new THREE.Vector3();
+
+    function render(now) {
+      const dt = Math.min(0.05, (now - prev) / 1000);
+      prev = now;
+      const u = state.u * (1 - state.back);
+      const apart = smooth(0.3, 0.75, u);
+      if (Math.abs(u - last) > 1e-4 || Math.abs(state.intro - lastIntro) > 1e-4) {
+        build(u, state.intro);
+        last = u; lastIntro = state.intro;
+      }
+      if (animated && apart < 0.001) spin += dt * 0.22;
+      const rest = Math.round(spin / (Math.PI * 2)) * Math.PI * 2;
+      group.rotation.set(lerp(0.42, 0, apart), lerp(spin, rest, apart), 0);
+      group.scale.setScalar(fit);
+      group.position.set(ctaShift.x * state.back, BASE_Y + ctaShift.y * state.back, 0);
+      renderer.render(scene, camera);
+
+      {
+        const w = window.innerWidth, h = window.innerHeight;
+        captions.forEach((el, i) => {
+          const op = smooth(THRESH[i], THRESH[i] + 0.08, u) * (1 - state.fade) * (1 - state.back);
+          el.style.opacity = op.toFixed(3);
+          if (op <= 0) return;
+          ringPoint.copy(slots[i]).multiplyScalar(apart);
+          edgePoint.copy(ringPoint);
+          if (portrait) edgePoint.x += RING + TUBE; else edgePoint.y -= RING + TUBE;
+          group.localToWorld(ringPoint).project(camera);
+          group.localToWorld(edgePoint).project(camera);
+          const cx = (ringPoint.x * 0.5 + 0.5) * w, cy = (-ringPoint.y * 0.5 + 0.5) * h;
+          const ex = (edgePoint.x * 0.5 + 0.5) * w, ey = (-edgePoint.y * 0.5 + 0.5) * h;
+          if (portrait) {
+            const x = Math.round(ex + 14);
+            el.style.width = `${Math.min(300, w - x - 16)}px`;
+            el.style.transform = `translate(${x}px, ${Math.round(cy)}px) translateY(-50%)`;
+          } else {
+            // 가로 배치: 고리 사이 간격 안에서 가운데 정렬
+            el.style.width = `${Math.round(Math.min(320, ringGap - 40))}px`;
+            el.style.transform = `translate(${Math.round(cx)}px, ${Math.round(ey + 24)}px) translateX(-50%)`;
+          }
+        });
+      }
+    }
+
+    // 화면에 보일 때만 그리고, 탭이 숨겨지거나 3D가 완전히 사라지면 멈춤
+    const visible = () => !document.hidden && (1 - state.fade * (1 - state.fadeBack)) > 0.01;
+    function tick(now) {
+      if (!visible()) { raf = 0; return; }
+      render(now);
+      raf = requestAnimationFrame(tick);
+    }
+    const wake = () => { if (animated && !raf && visible()) { prev = performance.now(); raf = requestAnimationFrame(tick); } };
+
+    layout();
+    if (!animated) {
+      // 움직임을 줄였거나 GSAP을 불러오지 못하면: 회전·전환 없이 구간마다 정지 장면 한 장
+      // (첫 화면은 매듭, 풀리는 구간은 나뉜 세 고리, 기능 소개는 3D 없음, 마지막은 다시 매듭)
+      const SCENES = {
+        hero: { u: 0, back: 0, fade: 0 },
+        unravel: { u: 1, back: 0, fade: 0 },
+        features: { u: 1, back: 0, fade: 1 },
+        cta: { u: 1, back: 1, fade: 0 },
+      };
+      const sections = { hero: ".hero", unravel: "#unravel", features: ".features", cta: ".cta" };
+      const ratios = {};
+      let current = "";
+      const show = (name) => {
+        if (name === current) return;
+        current = name;
+        Object.assign(state, SCENES[name]);
+        canvas.style.opacity = state.fade ? "0" : "1";
+        render(performance.now());
+      };
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { ratios[e.target.dataset.scene] = e.intersectionRect.height; });
+        show(Object.keys(ratios).reduce((a, b) => (ratios[a] >= ratios[b] ? a : b)));
+      }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+      Object.entries(sections).forEach(([name, sel]) => {
+        const el = document.querySelector(sel);
+        el.dataset.scene = name;
+        observer.observe(el);
+      });
+      window.addEventListener("resize", () => { layout(); last = -1; render(performance.now()); });
+      return;
+    }
+
+    gsap.registerPlugin(ScrollTrigger);
+    const fadeCanvas = () => { canvas.style.opacity = (1 - state.fade * (1 - state.fadeBack)).toFixed(3); wake(); };
+    gsap.to(state, { intro: 0, duration: 2.4, ease: "expo.out", delay: 0.15, onUpdate: wake });
+    gsap.to(".scroll-hint", { autoAlpha: 0, ease: "none",
+      scrollTrigger: { trigger: ".hero", start: "top top", end: "15% top", scrub: true } });
+    gsap.to(state, { u: 1, ease: "none", onUpdate: wake,
+      scrollTrigger: { trigger: "#unravel", start: "top top", end: "+=230%", pin: true, scrub: 0.8 } });
+    gsap.to(state, { fade: 1, ease: "none", onUpdate: fadeCanvas,
+      scrollTrigger: { trigger: ".features", start: "top 70%", end: "top 15%", scrub: true } });
+    gsap.to(state, { fadeBack: 1, ease: "none", onUpdate: fadeCanvas,
+      scrollTrigger: { trigger: ".cta", start: "top 55%", end: "top 25%", scrub: true } });
+    gsap.to(state, { back: 1, ease: "none", onUpdate: wake,
+      scrollTrigger: { trigger: ".cta", start: "top bottom", end: "top 15%", scrub: 0.8 } });
+
+    window.addEventListener("resize", () => { layout(); last = -1; wake(); });
+    document.addEventListener("visibilitychange", wake);
+    wake();
+  }
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@
   :root {
     --bg: #f6f4ef; --card: #ffffff; --text: #1f2421; --muted: #6b716d;
     --line: #e4e0d8; --accent: #2f6f4f; --accent-soft: #e3efe8; --danger: #b4443a;
+    --rec-muted: #4d6457; --rec-line: #c9dccf;
     --carb: #d9a441; --protein: #2f6f4f; --fat: #b06a3b;
   }
   * { box-sizing: border-box; }
@@ -31,9 +32,65 @@
   .bars { display: grid; gap: 10px; margin-top: 16px; }
   .bar-label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
   .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
-  .bar > div { height: 100%; border-radius: 4px; }
+  .bar > div { height: 100%; clip-path: inset(0 calc(100% - var(--p, 0%)) 0 0 round 4px);
+               transition: clip-path 700ms var(--ease-out); }
+  .bar-value { font-variant-numeric: tabular-nums; }
+
+  /* 서버 재계산을 보여주는 움직임: 숫자는 굴러가고, 증감 칩이 떠올랐다 사라짐 */
+  :root { --ease-out: cubic-bezier(0.16, 1, 0.3, 1); }
+  .kcal { position: relative; font-variant-numeric: tabular-nums; }
+  .delta { display: inline-block; margin-left: 8px; padding: 2px 9px; border-radius: 999px; vertical-align: 10px;
+           font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--accent); background: var(--accent-soft);
+           opacity: 0; pointer-events: none; }
+  .delta.minus { color: var(--rec-muted); background: var(--line); }
+  .delta.show { animation: delta-pop 2400ms var(--ease-out) forwards; }
+  @keyframes delta-pop {
+    0% { opacity: 0; transform: translateY(8px); }
+    12% { opacity: 1; transform: translateY(0); }
+    75% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-4px); }
+  }
+  button { transition: transform 120ms var(--ease-out), opacity 150ms; }
+  button:active:not(:disabled) { transform: scale(0.97); }
   .recommend { background: var(--accent-soft); border-color: transparent; }
-  .recommend strong { font-size: 20px; }
+  .recommend { word-break: keep-all; }
+  .recommend h2 { color: var(--rec-muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .rec-head { margin: 0; font-size: 17px; }
+  .rec-head strong { font-size: 24px; letter-spacing: -0.5px; }
+  .rec-kcal { display: block; margin-top: 2px; color: var(--rec-muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .rec-steps { list-style: none; margin: 18px 0 0; padding: 16px 0 0; border-top: 1px solid var(--rec-line); display: grid; gap: 14px; }
+  .rec-steps > li { display: grid; gap: 6px; }
+  .rec-step { font-size: 13px; font-weight: 600; color: var(--rec-muted); }
+  .rec-calc { font-variant-numeric: tabular-nums; }
+  .rec-calc .note { display: block; margin-top: 2px; color: var(--rec-muted); font-size: 14px; }
+  .shortfalls { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .shortfalls li { display: grid; grid-template-columns: 4.5em 1fr auto; gap: 10px; align-items: baseline;
+                   font-size: 14px; color: var(--rec-muted); font-variant-numeric: tabular-nums; }
+  .shortfalls li.pick { color: var(--text); font-weight: 600; }
+  .shortfalls li { margin: 0 -6px; padding: 2px 6px; border-radius: 6px; }
+
+  /* 추천이 바뀌면: 근거 단계가 위에서 아래로 펼쳐지고, 새로 고른 영양소가 잠깐 물듦 */
+  .recalc .rec-head { animation: rec-in 450ms var(--ease-out) both; }
+  .recalc .rec-steps { animation: rec-unroll 650ms var(--ease-out) 80ms both; }
+  .recalc .shortfalls li.pick { animation: pick-wash 1600ms ease-out 350ms both; }
+  @keyframes rec-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes rec-unroll { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes pick-wash { from { background: rgba(47, 111, 79, 0.2); } to { background: rgba(47, 111, 79, 0); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar > div { transition: none; }
+    .delta.show { animation-name: delta-fade; }
+    @keyframes delta-fade { 0% { opacity: 0; } 10%, 75% { opacity: 1; } 100% { opacity: 0; } }
+    .recalc .rec-head { animation-name: rec-fade; }
+    .recalc .rec-steps { animation: none; }
+    @keyframes rec-fade { from { opacity: 0; } to { opacity: 1; } }
+    button { transition: none; }
+    button:active:not(:disabled) { transform: none; }
+  }
+  .rec-add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .rec-add select { flex: 0 0 auto; }
+  .recommend .info { color: var(--accent); }
   form { display: grid; gap: 8px; }
   .meal-form { grid-template-columns: 1fr 1fr 110px auto; }
   .food-form { grid-template-columns: 2fr repeat(4, 1fr) auto; }
@@ -68,13 +125,14 @@
 
   <section class="card">
     <h2>하루 요약</h2>
-    <div class="kcal"><span id="kcal">0</span> <small>/ <span id="kcalTarget">2000</span> kcal · <span id="count">0</span>끼</small></div>
+    <div class="kcal"><span id="kcal">0</span><span class="delta" id="kcalDelta" aria-hidden="true"></span> <small>/ <span id="kcalTarget">2000</span> kcal · <span id="count">0</span>끼</small></div>
     <div class="bars" id="bars"></div>
   </section>
 
   <section class="card recommend">
-    <h2>다음 끼니 추천</h2>
-    <div id="recommend">-</div>
+    <h2 id="recommendTitle">다음 끼니 추천</h2>
+    <div id="recommend">추천을 계산하고 있어요…</div>
+    <div class="info" id="recommendInfo" role="status" aria-live="polite"></div>
   </section>
 
   <section class="card">
@@ -150,7 +208,22 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
       (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  dateInput.value = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+  const kst = new Date(Date.now() + 9 * 3600 * 1000);
+  const today = kst.toISOString().slice(0, 10);
+  dateInput.value = today;
+
+  const fmt = (n) => Number(n).toLocaleString("ko-KR", { maximumFractionDigits: 1 });
+  const NUTRIENT_KEYS = { "탄수화물": "carbohydrate", "단백질": "protein", "지방": "fat" };
+
+  // 지금 시각(한국)에 맞는 끼니를 기본값으로
+  function currentMealType() {
+    const hour = kst.getUTCHours();
+    if (hour < 10) return "BREAKFAST";
+    if (hour < 15) return "LUNCH";
+    if (hour < 21) return "DINNER";
+    return "SNACK";
+  }
+  let currentRec = null;
 
   // 모든 API 호출은 이 함수로: 로그인이 풀렸으면(401) 로그인 화면으로 이동
   async function api(url, options) {
@@ -189,41 +262,143 @@
       .join("");
   }
 
-  async function loadDay() {
+  // animate: 내가 방금 바꾼 기록 때문에 서버가 다시 계산한 경우에만 변화를 보여줌 (첫 로딩·날짜 변경은 조용히)
+  async function loadDay({ animate = false } = {}) {
     const date = dateInput.value;
     const [meals, summary, recText] = await Promise.all([
       api(`/meals?date=${date}`).then((r) => r.json()),
       api(`/summary?date=${date}`).then((r) => r.json()),
       api(`/recommendation?date=${date}`).then((r) => r.text()),
     ]);
-    renderSummary(summary);
-    renderRecommend(recText ? JSON.parse(recText) : null);
+    renderSummary(summary, animate);
+    renderRecommend(recText ? JSON.parse(recText) : null, summary, date, animate);
     renderMeals(meals);
   }
 
-  function renderSummary(s) {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let shownKcal = 0;
+  let kcalFrame = 0;
+
+  // 이전 값에서 새 값으로 숫자를 굴림 (동작 줄이기 설정이면 바로 바꿈)
+  function tweenKcal(to, animate) {
+    cancelAnimationFrame(kcalFrame);
+    const from = shownKcal;
+    shownKcal = to;
+    if (!animate || reduceMotion.matches || from === to) {
+      $("kcal").textContent = fmt(to);
+      return;
+    }
+    const start = performance.now();
+    const duration = 700;
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(2, -10 * t);   // ease-out expo
+      $("kcal").textContent = fmt(Math.round(from + (to - from) * (t === 1 ? 1 : eased)));
+      if (t < 1) kcalFrame = requestAnimationFrame(step);
+    };
+    kcalFrame = requestAnimationFrame(step);
+  }
+
+  function showDelta(diff) {
+    const chip = $("kcalDelta");
+    chip.classList.remove("show", "minus");
+    if (diff === 0) return;
+    chip.textContent = `${diff > 0 ? "+" : "−"}${fmt(Math.abs(diff))}kcal`;
+    chip.classList.toggle("minus", diff < 0);
+    void chip.offsetWidth;   // 같은 애니메이션을 연달아 다시 시작하기 위해
+    chip.classList.add("show");
+  }
+
+  function renderSummary(s, animate) {
     const targets = [
       { key: "totalCarbohydrate", name: "탄수화물", target: me.targetCarbohydrate, color: "var(--carb)" },
       { key: "totalProtein", name: "단백질", target: me.targetProtein, color: "var(--protein)" },
       { key: "totalFat", name: "지방", target: me.targetFat, color: "var(--fat)" },
     ];
-    $("kcal").textContent = Math.round(s.totalKcal);
+    const kcal = Math.round(s.totalKcal);
+    if (animate) showDelta(kcal - shownKcal);
+    tweenKcal(kcal, animate);
     $("count").textContent = s.mealCount;
-    $("bars").innerHTML = targets.map((t) => {
+
+    // 막대는 한 번만 만들고 값만 바꿔야 이전 길이에서 새 길이로 자라남
+    if ($("bars").children.length !== targets.length) {
+      $("bars").innerHTML = targets.map((t) => `
+        <div>
+          <div class="bar-label"><span>${t.name}</span><span class="bar-value"></span></div>
+          <div class="bar"><div style="background:${t.color}"></div></div>
+        </div>`).join("");
+    }
+    targets.forEach((t, i) => {
+      const row = $("bars").children[i];
       const value = s[t.key];
       const percent = Math.min(100, (value / t.target) * 100);
-      return `
-        <div>
-          <div class="bar-label"><span>${t.name}</span><span>${value}g / ${t.target}g</span></div>
-          <div class="bar"><div style="width:${percent}%; background:${t.color}"></div></div>
-        </div>`;
-    }).join("");
+      row.querySelector(".bar-value").textContent = `${value}g / ${t.target}g`;
+      row.querySelector(".bar > div").style.setProperty("--p", `${percent}%`);
+    });
   }
 
-  function renderRecommend(rec) {
-    $("recommend").innerHTML = rec
-      ? `<strong>${esc(rec.food.name)} ${rec.grams}g</strong><div>${esc(rec.reason)}</div>`
-      : "오늘 목표를 모두 채웠어요";
+  const recKey = (r) => (r ? `${r.food.id}:${r.grams}` : "none");
+
+  function renderRecommend(rec, summary, date, animate) {
+    const isPast = date < today;
+    const day = isPast ? "이날" : "오늘";
+    $("recommendTitle").textContent = isPast ? "이날 더 먹었으면 좋았을 음식" : "다음 끼니 추천";
+    const changed = recKey(rec) !== recKey(currentRec);
+    currentRec = rec;
+
+    // 추천이 실제로 바뀌었을 때만 근거를 다시 펼침
+    const box = $("recommend");
+    box.classList.remove("recalc");
+    if (animate && changed) {
+      void box.offsetWidth;
+      box.classList.add("recalc");
+    }
+
+    if (!rec) {
+      // 서버는 칼로리를 다 채웠거나, 세 영양소를 모두 채웠거나, 고를 음식이 없거나, 추천량이 1g 미만이면 추천하지 않음
+      const macrosMet = summary.totalCarbohydrate >= me.targetCarbohydrate
+          && summary.totalProtein >= me.targetProtein && summary.totalFat >= me.targetFat;
+      const message = summary.totalKcal >= me.targetKcal
+          ? `${day} 목표 칼로리 ${fmt(me.targetKcal)}kcal를 다 채웠어요. 더 추천할 음식은 없어요.`
+          : macrosMet
+              ? `${day} 탄수화물·단백질·지방 목표를 모두 채웠어요.`
+              : "지금은 따로 추천할 음식이 없어요. 남은 영양소가 아주 적거나, 그 영양소가 든 음식이 아직 등록되지 않았어요.";
+      box.innerHTML = `<p class="rec-head">${message}</p>`;
+      return;
+    }
+
+    const name = esc(rec.food.name);
+    const picked = rec.shortfalls.find((s) => s.nutrient === rec.nutrient);
+    const per100 = rec.food[NUTRIENT_KEYS[rec.nutrient]];
+    const rows = rec.shortfalls.map((s) => {
+      const isPick = s.nutrient === rec.nutrient;
+      const detail = s.lack > 0
+          ? `목표 ${fmt(s.target)}g 중 ${fmt(s.lack)}g 부족${isPick ? '<span class="sr-only"> (가장 부족해요)</span>' : ""}`
+          : `목표 ${fmt(s.target)}g 채움`;
+      const percent = s.ratio > 0 ? `${Math.round(s.ratio * 100)}%` : "0%";
+      return `<li${isPick ? ' class="pick"' : ""}><span>${s.nutrient}</span><span>${detail}</span><span>${percent}</span></li>`;
+    }).join("");
+    const amount = rec.capped
+        ? `<span class="note">남은 칼로리 ${fmt(Math.round(rec.remainingKcal))}kcal에 맞춰 ${fmt(rec.grams)}g으로 줄였어요.</span>`
+        : `<span class="note">남은 칼로리 ${fmt(Math.round(rec.remainingKcal))}kcal 안이라 그대로 추천해요.</span>`;
+
+    $("recommend").innerHTML = `
+      <p class="rec-head"><strong>${name} ${fmt(rec.grams)}g</strong> 어때요?
+        <span class="rec-kcal">${fmt(Math.round(rec.kcal))}kcal · ${esc(rec.reason)}</span></p>
+      <ol class="rec-steps">
+        <li><span class="rec-step">1. 목표 대비 가장 부족한 영양소</span><ul class="shortfalls">${rows}</ul></li>
+        <li><span class="rec-step">2. ${rec.nutrient}이 가장 많이 든 음식</span>
+          <span class="rec-calc">${name} · 100g당 ${rec.nutrient} ${fmt(per100)}g</span></li>
+        <li><span class="rec-step">3. 추천량 계산</span>
+          <span class="rec-calc">${fmt(picked.lack)}g ÷ ${fmt(per100)}g × 100 = ${fmt(rec.neededGrams)}g${amount}</span></li>
+      </ol>
+      <form id="recForm" class="rec-add">
+        <select id="recMealType" aria-label="기록할 끼니">
+          ${Object.entries(MEAL_NAMES).map(([value, label]) =>
+              `<option value="${value}"${value === currentMealType() ? " selected" : ""}>${label}</option>`).join("")}
+        </select>
+        <button type="submit">이대로 추가</button>
+      </form>`;
   }
 
   function renderMeals(meals) {
@@ -244,7 +419,7 @@
   async function deleteMeal(id) {
     if (!confirm("이 기록을 삭제할까요?")) return;
     await api(`/meals/${id}`, { method: "DELETE" });
-    loadDay();
+    loadDay({ animate: true });
   }
 
   async function createFood(food) {
@@ -285,7 +460,33 @@
       return;
     }
     $("grams").value = "";
-    loadDay();
+    loadDay({ animate: true });
+  });
+
+  // 추천을 그대로 기록 (폼이 다시 그려지므로 카드에서 이벤트를 받음)
+  $("recommend").addEventListener("submit", async (e) => {
+    if (e.target.id !== "recForm" || !currentRec) return;
+    e.preventDefault();
+    const rec = currentRec;
+    const mealType = $("recMealType").value;
+    const button = e.target.querySelector("button");
+    button.disabled = true;
+    $("recommendInfo").textContent = "";
+    const res = await api("/meals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: dateInput.value, mealType, foodId: rec.food.id, grams: rec.grams }),
+    });
+    if (!res.ok) {
+      button.disabled = false;
+      $("recommendInfo").className = "error";
+      $("recommendInfo").textContent = await errorText(res);
+      return;
+    }
+    await loadDay({ animate: true });
+    $("recommendInfo").className = "info";
+    $("recommendInfo").textContent =
+        `${rec.food.name} ${fmt(rec.grams)}g을 ${MEAL_NAMES[mealType]}으로 기록했어요. 요약과 추천을 다시 계산했어요.`;
   });
 
   // 목표 저장
@@ -307,7 +508,7 @@
       return;
     }
     await loadMe();
-    loadDay();   // 새 목표로 요약 막대와 추천 다시 계산
+    loadDay({ animate: true });   // 새 목표로 요약 막대와 추천 다시 계산
   });
 
   // 공공 데이터 검색
@@ -375,7 +576,10 @@
     }
   });
 
-  dateInput.addEventListener("change", loadDay);
+  dateInput.addEventListener("change", () => {
+    $("recommendInfo").textContent = "";
+    loadDay();
+  });
 
   loadMe().then(loadFoods).then(loadDay);
 </script>
