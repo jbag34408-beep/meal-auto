@@ -23,7 +23,7 @@ public class SecurityConfig {
 
         // 로그인 없이 접근 가능한 주소만 열고, 나머지는 모두 로그인 필요
         .authorizeHttpRequests(auth -> auth
-          .requestMatchers("/", "/landing.html", "/login.html", "/signup", "/login", "/error", "/favicon.ico").permitAll()
+          .requestMatchers("/index.html", "/landing.html", "/login.html", "/signup", "/login", "/error", "/favicon.ico").permitAll()
             .anyRequest().authenticated())
 
         // 로그인: 화면은 login.html, 처리 주소는 POST /login
