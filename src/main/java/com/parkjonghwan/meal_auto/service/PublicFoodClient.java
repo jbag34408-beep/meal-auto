@@ -12,6 +12,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.databind.JsonNode;
 
+
 // 식약처 식품영양성분 API를 호출하는 클래스 (외부 API 관련 코드를 이 파일 하나에 모음)
 @Component
 public class PublicFoodClient {

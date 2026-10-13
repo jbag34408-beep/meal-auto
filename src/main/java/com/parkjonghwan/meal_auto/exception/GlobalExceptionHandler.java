@@ -58,4 +58,10 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
         .body(ErrorResponse.of(502, e.getMessage()));
   }
+    // 아이디 중복 → 409
+  @ExceptionHandler(DuplicateMemberException.class)
+  public ResponseEntity<ErrorResponse> handleDuplicateMember(DuplicateMemberException e) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(ErrorResponse.of(409, e.getMessage()));
+  }
 }

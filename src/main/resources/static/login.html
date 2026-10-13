@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로그인 · 식단 자동화</title>
+<style>
+  :root { --bg:#f6f4ef; --card:#fff; --text:#1f2421; --muted:#6b716d; --line:#e4e0d8; --accent:#2f6f4f; --danger:#b4443a; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--text);
+         font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif; padding:16px; }
+  .card { width:100%; max-width:380px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:28px; }
+  h1 { margin:0 0 6px; font-size:24px; }
+  p { margin:0 0 20px; color:var(--muted); font-size:14px; }
+  .tabs { display:grid; grid-template-columns:1fr 1fr; margin-bottom:16px; border-bottom:1px solid var(--line); }
+  .tab { background:none; color:var(--muted); border:none; padding:10px; font:inherit; cursor:pointer; border-bottom:2px solid transparent; }
+  .tab.active { color:var(--text); border-bottom-color:var(--accent); font-weight:600; }
+  form { display:grid; gap:10px; }
+  input, button.submit { font:inherit; padding:11px 12px; border-radius:8px; border:1px solid var(--line); }
+  button.submit { background:var(--accent); color:#fff; border:none; cursor:pointer; }
+  .error { color:var(--danger); font-size:14px; min-height:18px; margin-top:10px; }
+  .hint { margin-top:16px; font-size:13px; color:var(--muted); }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>식단 자동화</h1>
+  <p>먹은 음식을 기록하면 영양을 계산하고 다음 끼니를 추천해요.</p>
+
+  <div class="tabs">
+    <button class="tab active" id="loginTab">로그인</button>
+    <button class="tab" id="signupTab">회원가입</button>
+  </div>
+
+  <form id="loginForm">
+    <input id="loginUsername" placeholder="아이디" autocomplete="username" required>
+    <input id="loginPassword" type="password" placeholder="비밀번호" autocomplete="current-password" required>
+    <button class="submit" type="submit">로그인</button>
+  </form>
+
+  <form id="signupForm" hidden>
+    <input id="signupUsername" placeholder="아이디 (영문·숫자 4~20자)" autocomplete="username" required>
+    <input id="signupPassword" type="password" placeholder="비밀번호 (8자 이상)" autocomplete="new-password" required>
+    <button class="submit" type="submit">가입하고 시작하기</button>
+  </form>
+
+  <div class="error" id="error"></div>
+  <div class="hint">체험용 계정: <b>demo</b> / <b>demo1234</b></div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function showTab(isLogin) {
+    $("loginTab").classList.toggle("active", isLogin);
+    $("signupTab").classList.toggle("active", !isLogin);
+    $("loginForm").hidden = !isLogin;
+    $("signupForm").hidden = isLogin;
+    $("error").textContent = "";
+  }
+  $("loginTab").onclick = () => showTab(true);
+  $("signupTab").onclick = () => showTab(false);
+
+  // Spring Security 로그인은 JSON이 아니라 폼 형식(username=...&password=...)으로 보냄
+  async function login(username, password) {
+    const res = await fetch("/login", {
+      method: "POST",
+      body: new URLSearchParams({ username, password }),
+    });
+    if (!res.ok) throw new Error("아이디 또는 비밀번호가 올바르지 않아요");
+    location.href = "/";
+  }
+
+  $("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("error").textContent = "";
+    try {
+      await login($("loginUsername").value, $("loginPassword").value);
+    } catch (err) {
+      $("error").textContent = err.message;
+    }
+  });
+
+  $("signupForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("error").textContent = "";
+    const username = $("signupUsername").value;
+    const password = $("signupPassword").value;
+    const res = await fetch("/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      $("error").textContent = Object.values(err.errors || {}).join(", ") || err.message || "가입에 실패했어요";
+      return;
+    }
+    await login(username, password);   // 가입 후 바로 로그인
+  });
+</script>
+</body>
+</html>

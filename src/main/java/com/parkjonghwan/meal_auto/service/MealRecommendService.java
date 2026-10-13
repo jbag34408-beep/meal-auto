@@ -1,6 +1,7 @@
 package com.parkjonghwan.meal_auto.service;
 
 import com.parkjonghwan.meal_auto.domain.Food;
+import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.dto.DailySummary;
 import com.parkjonghwan.meal_auto.dto.Recommendation;
 import com.parkjonghwan.meal_auto.repository.FoodRepository;
@@ -9,32 +10,26 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class MealRecommendService {
-  private static final double TARGET_KCAL = 2000;
-  private static final double TARGET_CARBOHYDRATE = 300;
-  private static final double TARGET_PROTEIN = 60;
-  private static final double TARGET_FAT = 50;
-
   private final FoodRepository foodRepository;
 
   public MealRecommendService(FoodRepository foodRepository) {
     this.foodRepository = foodRepository;
   }
 
-  public Recommendation recommend(DailySummary summary) {
-    double remainingKcal = TARGET_KCAL - summary.getTotalKcal();
+  // 고정 상수 대신 회원 각자의 목표로 계산
+  public Recommendation recommend(DailySummary summary, Member member) {
+    double remainingKcal = member.getTargetKcal() - summary.getTotalKcal();
     if (remainingKcal <= 0) {
-      return null;   // 오늘 칼로리를 다 채움
+      return null;
     }
 
-    // 1) 영양소별 부족량
-    double carbohydrateLack = TARGET_CARBOHYDRATE - summary.getTotalCarbohydrate();
-    double proteinLack = TARGET_PROTEIN - summary.getTotalProtein();
-    double fatLack = TARGET_FAT - summary.getTotalFat();
+    double carbohydrateLack = member.getTargetCarbohydrate() - summary.getTotalCarbohydrate();
+    double proteinLack = member.getTargetProtein() - summary.getTotalProtein();
+    double fatLack = member.getTargetFat() - summary.getTotalFat();
 
-    // 2) 목표 대비 비율로 비교
-    double carbohydrateRatio = carbohydrateLack / TARGET_CARBOHYDRATE;
-    double proteinRatio = proteinLack / TARGET_PROTEIN;
-    double fatRatio = fatLack / TARGET_FAT;
+    double carbohydrateRatio = carbohydrateLack / member.getTargetCarbohydrate();
+    double proteinRatio = proteinLack / member.getTargetProtein();
+    double fatRatio = fatLack / member.getTargetFat();
 
     String nutrient;
     double lack;
@@ -50,10 +45,9 @@ public class MealRecommendService {
     }
 
     if (lack <= 0) {
-      return null;   // 모든 영양소 목표 달성
+      return null;
     }
 
-    // 3) 그 영양소가 가장 많은 음식 찾기
     List<Food> candidates = foodRepository.findAll();
     Food best = null;
     double bestAmount = 0;
@@ -68,7 +62,6 @@ public class MealRecommendService {
       return null;
     }
 
-    // 4) 부족분을 채우는 양, 남은 칼로리를 넘으면 줄이기
     double grams = lack / bestAmount * 100;
     double kcal = best.getKcalPer100g() * (grams / 100);
     if (kcal > remainingKcal) {

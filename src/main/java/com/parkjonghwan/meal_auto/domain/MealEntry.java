@@ -1,5 +1,6 @@
 package com.parkjonghwan.meal_auto.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
@@ -9,13 +10,18 @@ public class MealEntry {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(name = "meal_date")      // date는 DB 예약어와 겹칠 수 있어 컬럼명 변경
+  @ManyToOne
+  @JoinColumn(name = "member_id")
+  @JsonIgnore   // 응답 JSON에 회원 정보(비밀번호 해시 포함)가 섞여 나가지 않게
+  private Member member;
+
+  @Column(name = "meal_date")
   private LocalDate date;
 
-  @Enumerated(EnumType.STRING)     // enum을 "LUNCH" 글자로 저장
+  @Enumerated(EnumType.STRING)
   private MealType mealType;
 
-  @ManyToOne                       // 여러 기록 → 음식 하나
+  @ManyToOne
   @JoinColumn(name = "food_id")
   private Food food;
 
@@ -23,14 +29,26 @@ public class MealEntry {
 
   protected MealEntry() {}
 
-  public MealEntry(LocalDate date, MealType mealType, Food food, double grams) {
+  public MealEntry(Member member, LocalDate date, MealType mealType, Food food, double grams) {
+    this.member = member;
     this.date = date;
     this.mealType = mealType;
     this.food = food;
     this.grams = grams;
   }
 
+  // 회원 정보 없이 만드는 생성자 (계산 테스트용)
+  public MealEntry(LocalDate date, MealType mealType, Food food, double grams) {
+    this(null, date, mealType, food, grams);
+  }
+
+  // 회원 기능 이전에 저장된 기록을 회원에게 넘길 때 사용
+  public void assignMember(Member member) {
+    this.member = member;
+  }
+
   public Long getId() { return id; }
+  public Member getMember() { return member; }
   public LocalDate getDate() { return date; }
   public MealType getMealType() { return mealType; }
   public Food getFood() { return food; }

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 
-// 어노테이션으로 "들어와도 되는 값"의 규칙을 선언
+// 식사 기록 추가 요청 데이터 (어노테이션으로 들어와도 되는 값의 규칙을 선언)
 public record MealEntryRequest(
     LocalDate date,   // 생략 가능 (생략 시 오늘)
 
