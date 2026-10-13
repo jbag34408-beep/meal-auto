@@ -4,6 +4,7 @@ import com.parkjonghwan.meal_auto.domain.Food;
 import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.dto.DailySummary;
 import com.parkjonghwan.meal_auto.dto.Recommendation;
+import com.parkjonghwan.meal_auto.dto.Shortfall;
 import com.parkjonghwan.meal_auto.repository.FoodRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,13 @@ public class MealRecommendService {
     double carbohydrateRatio = carbohydrateLack / member.getTargetCarbohydrate();
     double proteinRatio = proteinLack / member.getTargetProtein();
     double fatRatio = fatLack / member.getTargetFat();
+
+    List<Shortfall> shortfalls = List.of(
+        shortfall("탄수화물", member.getTargetCarbohydrate(), summary.getTotalCarbohydrate(),
+            carbohydrateLack, carbohydrateRatio),
+        shortfall("단백질", member.getTargetProtein(), summary.getTotalProtein(),
+            proteinLack, proteinRatio),
+        shortfall("지방", member.getTargetFat(), summary.getTotalFat(), fatLack, fatRatio));
 
     String nutrient;
     double lack;
@@ -63,14 +71,30 @@ public class MealRecommendService {
     }
 
     double grams = lack / bestAmount * 100;
+    double neededGrams = Math.round(grams);
     double kcal = best.getKcalPer100g() * (grams / 100);
-    if (kcal > remainingKcal) {
+    boolean capped = kcal > remainingKcal;
+    if (capped) {
       grams = remainingKcal / best.getKcalPer100g() * 100;
     }
     grams = Math.round(grams);
+    if (grams < 1) {   // 1g도 안 되는 양은 추천하지 않음 (기록 최소량도 1g)
+      return null;
+    }
 
     String reason = String.format("%s이 목표보다 %.1fg 부족해요", nutrient, lack);
-    return new Recommendation(best, grams, reason);
+    return new Recommendation(best, grams, reason, nutrient, neededGrams,
+        round1(best.getKcalPer100g() * grams / 100), round1(remainingKcal), capped, shortfalls);
+  }
+
+  private Shortfall shortfall(String nutrient, double target, double eaten,
+                              double lack, double ratio) {
+    return new Shortfall(nutrient, target, round1(eaten), round1(lack),
+        Math.round(ratio * 1000) / 1000.0);
+  }
+
+  private double round1(double value) {
+    return Math.round(value * 10) / 10.0;
   }
 
   private double amountPer100g(Food food, String nutrient) {

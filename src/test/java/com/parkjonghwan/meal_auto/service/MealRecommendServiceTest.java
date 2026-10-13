@@ -1,7 +1,9 @@
 package com.parkjonghwan.meal_auto.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.parkjonghwan.meal_auto.domain.Food;
 import com.parkjonghwan.meal_auto.domain.Member;
@@ -51,6 +53,25 @@ class MealRecommendServiceTest {
   }
 
   @Test
+  void 추천_근거를_함께_돌려준다() {
+    DailySummary summary = new DailySummary(today, 3, 628.0, 95.1, 53.2, 3.1);
+
+    Recommendation result = recommendService.recommend(summary, member);
+
+    // 부족 비율: 탄수화물 204.9/300=0.683, 단백질 6.8/60=0.113, 지방 46.9/50=0.938 → 지방
+    assertEquals("지방", result.getNutrient());
+    assertEquals(3, result.getShortfalls().size());
+    assertEquals(0.683, result.getShortfalls().get(0).ratio(), 0.0001);
+    assertEquals(0.113, result.getShortfalls().get(1).ratio(), 0.0001);
+    assertEquals(46.9, result.getShortfalls().get(2).lack(), 0.0001);
+    assertEquals(0.938, result.getShortfalls().get(2).ratio(), 0.0001);
+    assertEquals(94.0, result.getNeededGrams(), 0.001);
+    assertEquals(544.3, result.getKcal(), 0.001);
+    assertEquals(1372.0, result.getRemainingKcal(), 0.001);
+    assertFalse(result.isCapped());
+  }
+
+  @Test
   void 남은_칼로리를_넘지_않게_양을_줄인다() {
     DailySummary summary = new DailySummary(today, 4, 1900.0, 300.0, 60.0, 0.0);
 
@@ -58,11 +79,24 @@ class MealRecommendServiceTest {
 
     assertEquals("아몬드", result.getFood().getName());
     assertEquals(17.0, result.getGrams(), 0.001);
+    // 지방 50g을 채우려면 100g이 필요하지만 남은 100kcal에 맞춰 줄임
+    assertTrue(result.isCapped());
+    assertEquals(100.0, result.getNeededGrams(), 0.001);
+    assertEquals(98.4, result.getKcal(), 0.001);
+    assertEquals(100.0, result.getRemainingKcal(), 0.001);
   }
 
   @Test
   void 칼로리를_다_채웠으면_추천하지_않는다() {
     DailySummary summary = new DailySummary(today, 5, 2100.0, 300.0, 60.0, 50.0);
+
+    assertNull(recommendService.recommend(summary, member));
+  }
+
+  @Test
+  void 추천량이_1g도_안_되면_추천하지_않는다() {
+    // 탄수화물 0.2g 부족 → 쌀밥 0.4g → 반올림하면 0g
+    DailySummary summary = new DailySummary(today, 4, 1990.0, 299.8, 60.0, 50.0);
 
     assertNull(recommendService.recommend(summary, member));
   }
