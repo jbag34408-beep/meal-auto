@@ -1,0 +1,8 @@
+{
+  "name": "meal-auto",
+  "image": "mcr.microsoft.com/devcontainers/java:17",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "meal-auto", "onAutoForward": "openBrowser" }
+  }
+}
