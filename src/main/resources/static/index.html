@@ -22,6 +22,7 @@
   input, select, button { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; min-width: 0; }
   button { background: var(--accent); color: #fff; border: none; cursor: pointer; }
   button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: default; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
   .kcal { font-size: 40px; font-weight: 700; letter-spacing: -1px; }
   .kcal small { font-size: 16px; color: var(--muted); font-weight: 500; }
@@ -34,13 +35,17 @@
   form { display: grid; gap: 8px; }
   .meal-form { grid-template-columns: 1fr 1fr 110px auto; }
   .food-form { grid-template-columns: 2fr repeat(4, 1fr) auto; }
+  .public-form { grid-template-columns: 1fr auto; }
   table { width: 100%; border-collapse: collapse; font-size: 15px; }
   th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--line); }
   th { color: var(--muted); font-weight: 500; font-size: 13px; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .sub { display: block; color: var(--muted); font-size: 12px; }
   .del { background: none; color: var(--danger); padding: 4px 8px; }
+  .import { padding: 5px 10px; font-size: 13px; }
   .empty { color: var(--muted); text-align: center; padding: 20px; }
   .error { color: var(--danger); font-size: 14px; margin-top: 8px; min-height: 18px; }
+  .info { color: var(--accent); font-size: 14px; margin-top: 8px; min-height: 18px; }
   @media (max-width: 560px) {
     .meal-form, .food-form { grid-template-columns: 1fr 1fr; }
     header { flex-direction: column; align-items: start; }
@@ -82,7 +87,20 @@
   </section>
 
   <section class="card">
-    <h2>음식 등록 (100g 기준)</h2>
+    <h2>공공 데이터에서 음식 찾기 (식약처)</h2>
+    <form id="publicForm" class="public-form">
+      <input id="publicKeyword" placeholder="예: 사과, 김치찌개" required>
+      <button type="submit">검색</button>
+    </form>
+    <div class="error" id="publicError"></div>
+    <table>
+      <thead><tr><th>음식</th><th class="num">kcal</th><th class="num">탄·단·지(g)</th><th></th></tr></thead>
+      <tbody id="publicResults"></tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>음식 직접 등록 (100g 기준)</h2>
     <form id="foodForm" class="food-form">
       <input id="foodName" placeholder="이름" required>
       <input type="number" id="foodKcal" placeholder="kcal" min="0" max="900" step="0.1" required>
@@ -113,11 +131,15 @@
 
   const $ = (id) => document.getElementById(id);
   const dateInput = $("date");
+  let publicResults = [];   // 공공 API 검색 결과 (가져오기 버튼에서 사용)
+
+  // 외부 데이터를 화면에 넣을 때 HTML 태그로 해석되지 않게 바꾸기
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // 한국 시간 기준 오늘 날짜 (YYYY-MM-DD)
   dateInput.value = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 
-  // 서버 에러 응답(ErrorResponse)을 한 줄 문구로 바꾸기
   async function errorText(res) {
     try {
       const err = await res.json();
@@ -131,7 +153,7 @@
   async function loadFoods() {
     const foods = await (await fetch("/foods")).json();
     $("food").innerHTML = foods
-      .map((f) => `<option value="${f.id}">${f.name} (100g당 ${f.kcalPer100g}kcal)</option>`)
+      .map((f) => `<option value="${f.id}">${esc(f.name)} (100g당 ${f.kcalPer100g}kcal)</option>`)
       .join("");
   }
 
@@ -140,7 +162,7 @@
     const [meals, summary, recText] = await Promise.all([
       fetch(`/meals?date=${date}`).then((r) => r.json()),
       fetch(`/summary?date=${date}`).then((r) => r.json()),
-      fetch(`/recommendation?date=${date}`).then((r) => r.text()), // 추천 없으면 빈 응답
+      fetch(`/recommendation?date=${date}`).then((r) => r.text()),
     ]);
     renderSummary(summary);
     renderRecommend(recText ? JSON.parse(recText) : null);
@@ -163,7 +185,7 @@
 
   function renderRecommend(rec) {
     $("recommend").innerHTML = rec
-      ? `<strong>${rec.food.name} ${rec.grams}g</strong><div>${rec.reason}</div>`
+      ? `<strong>${esc(rec.food.name)} ${rec.grams}g</strong><div>${esc(rec.reason)}</div>`
       : "오늘 목표를 모두 채웠어요";
   }
 
@@ -175,7 +197,7 @@
     $("meals").innerHTML = meals.map((m) => `
       <tr>
         <td>${MEAL_NAMES[m.mealType]}</td>
-        <td>${m.food.name}</td>
+        <td>${esc(m.food.name)}</td>
         <td class="num">${m.grams}g</td>
         <td class="num">${Math.round(m.food.kcalPer100g * m.grams / 100)}kcal</td>
         <td class="num"><button class="del" onclick="deleteMeal(${m.id})">삭제</button></td>
@@ -186,6 +208,20 @@
     if (!confirm("이 기록을 삭제할까요?")) return;
     await fetch(`/meals/${id}`, { method: "DELETE" });
     loadDay();
+  }
+
+  // 음식 등록 공통 함수 (직접 등록, 공공 데이터 가져오기 둘 다 사용)
+  async function createFood(food) {
+    const res = await fetch("/foods", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(food),
+    });
+    if (!res.ok) throw new Error(await errorText(res));
+    const saved = await res.json();
+    await loadFoods();
+    $("food").value = saved.id;   // 기록 추가 칸에서 바로 선택
+    return saved;
   }
 
   // 식사 기록 추가
@@ -210,29 +246,70 @@
     loadDay();
   });
 
-  // 음식 등록
+  // 공공 데이터 검색
+  $("publicForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("publicError").textContent = "";
+    $("publicResults").innerHTML = `<tr><td colspan="4" class="empty">검색 중...</td></tr>`;
+    const keyword = encodeURIComponent($("publicKeyword").value.trim());
+    const res = await fetch(`/foods/public?keyword=${keyword}`);
+    if (!res.ok) {
+      $("publicResults").innerHTML = "";
+      $("publicError").textContent = await errorText(res);
+      return;
+    }
+    publicResults = await res.json();
+    if (publicResults.length === 0) {
+      $("publicResults").innerHTML = `<tr><td colspan="4" class="empty">검색 결과가 없어요</td></tr>`;
+      return;
+    }
+    $("publicResults").innerHTML = publicResults.map((f, i) => `
+      <tr>
+        <td>${esc(f.name)}
+          <span class="sub">${esc([f.maker, f.basis && `${f.basis} 기준`].filter(Boolean).join(" · "))}</span>
+        </td>
+        <td class="num">${f.kcal}</td>
+        <td class="num">${f.carbohydrate} · ${f.protein} · ${f.fat}</td>
+        <td class="num"><button class="import" onclick="importFood(${i}, this)">가져오기</button></td>
+      </tr>`).join("");
+  });
+
+  // 검색 결과를 우리 DB에 음식으로 등록
+  async function importFood(index, button) {
+    const f = publicResults[index];
+    $("publicError").textContent = "";
+    button.disabled = true;
+    try {
+      await createFood({
+        name: f.name.slice(0, 50),
+        kcalPer100g: f.kcal,
+        carbohydrate: f.carbohydrate,
+        protein: f.protein,
+        fat: f.fat,
+      });
+      button.textContent = "등록됨";
+    } catch (err) {
+      $("publicError").textContent = err.message;
+      button.disabled = false;
+    }
+  }
+
+  // 음식 직접 등록
   $("foodForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     $("foodError").textContent = "";
-    const res = await fetch("/foods", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      await createFood({
         name: $("foodName").value,
         kcalPer100g: Number($("foodKcal").value),
         carbohydrate: Number($("foodCarb").value),
         protein: Number($("foodProtein").value),
         fat: Number($("foodFat").value),
-      }),
-    });
-    if (!res.ok) {
-      $("foodError").textContent = await errorText(res);
-      return;
+      });
+      $("foodForm").reset();
+    } catch (err) {
+      $("foodError").textContent = err.message;
     }
-    const food = await res.json();
-    $("foodForm").reset();
-    await loadFoods();
-    $("food").value = food.id;   // 방금 등록한 음식을 기록 추가 칸에서 바로 선택
   });
 
   dateInput.addEventListener("change", loadDay);

@@ -52,4 +52,10 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest()
         .body(ErrorResponse.of(400, e.getMessage()));
   }
+    // 외부 API 실패 → 502 Bad Gateway (중간 서버가 외부 서버로부터 제대로 된 응답을 못 받음)
+  @ExceptionHandler(ExternalApiException.class)
+  public ResponseEntity<ErrorResponse> handleExternalApi(ExternalApiException e) {
+    return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+        .body(ErrorResponse.of(502, e.getMessage()));
+  }
 }
