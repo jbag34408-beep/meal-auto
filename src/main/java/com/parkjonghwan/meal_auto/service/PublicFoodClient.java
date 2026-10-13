@@ -3,9 +3,11 @@ package com.parkjonghwan.meal_auto.service;
 import com.parkjonghwan.meal_auto.dto.FoodSearchResult;
 import com.parkjonghwan.meal_auto.exception.ExternalApiException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -25,7 +27,11 @@ public class PublicFoodClient {
   private static final String FIELD_FAT = "AMT_NUM4";
   private static final String FIELD_CARBOHYDRATE = "AMT_NUM6";
 
-  private final RestClient restClient = RestClient.create();
+  // 연결 5초, 응답 10초 안에 안 오면 포기 (외부 서버가 느리거나 막혀도 화면이 멈추지 않게)
+  private final RestClient restClient = RestClient.builder()
+      .requestFactory(timeoutFactory())
+      .build();
+
   private final String baseUrl;
   private final String apiKey;
 
@@ -35,12 +41,19 @@ public class PublicFoodClient {
     this.apiKey = apiKey;
   }
 
+  private static SimpleClientHttpRequestFactory timeoutFactory() {
+    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(Duration.ofSeconds(5));
+    factory.setReadTimeout(Duration.ofSeconds(10));
+    return factory;
+  }
+
   public List<FoodSearchResult> search(String keyword) {
     if (apiKey.isBlank()) {
       throw new ExternalApiException("공공데이터 API 키(FOOD_API_KEY)가 설정되지 않았어요");
     }
 
-    // 인증키에는 + / = 같은 특수문자가 있어서 반드시 인코딩해야 함
+    // 인증키에 특수문자가 있을 수 있어서 반드시 인코딩
     // encode() → buildAndExpand() 순서여야 {key}, {name} 값이 안전하게 인코딩됨
     URI uri = UriComponentsBuilder.fromUriString(baseUrl)
         .queryParam("serviceKey", "{key}")
@@ -56,8 +69,9 @@ public class PublicFoodClient {
     try {
       root = restClient.get().uri(uri).retrieve().body(JsonNode.class);
     } catch (RestClientException e) {
-      // 키가 잘못되면 JSON 대신 XML 에러가 와서 여기로 떨어짐
-      throw new ExternalApiException("식품영양성분 API 호출에 실패했어요. 인증키를 확인하세요.");
+      // 시간 초과, 연결 실패, 키 오류(JSON 대신 XML 응답) 모두 여기로 옴
+      throw new ExternalApiException(
+          "식품영양성분 API 호출에 실패했어요. 서버가 해외에 있거나 인증키가 아직 활성화되지 않았을 수 있어요.");
     }
     if (root == null) {
       throw new ExternalApiException("식품영양성분 API 응답이 비어 있어요");
