@@ -7,3 +7,15 @@ bin/
 
 # H2 파일 DB
 data/
+
+# 로컬 백업·작업 폴더
+static-backup/
+mysite/
+
+# 디자인 리뷰 스크린샷
+.impeccable/review/
+
+# 이 컴퓨터에서만 쓰는 설정·캐시
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.claude/settings.local.json

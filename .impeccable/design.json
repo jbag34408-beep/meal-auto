@@ -1,0 +1,643 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T12:28:28.380Z",
+  "title": "Design System: 식단 자동화 (meal-auto)",
+  "extensions": {
+    "colorMeta": {
+      "carb": {
+        "role": "primary",
+        "displayName": "곡물 금빛 (Grain Gold)",
+        "canonical": "oklch(75.1% 0.130 79)",
+        "tonalRamp": [
+          "#1a0500",
+          "#3a1e00",
+          "#5d3a00",
+          "#825800",
+          "#a67a23",
+          "#c69e59",
+          "#e7c389",
+          "#ffeab8"
+        ]
+      },
+      "protein": {
+        "role": "primary",
+        "displayName": "숲 단백질 초록 (Forest Protein)",
+        "canonical": "oklch(49.0% 0.084 159)",
+        "tonalRamp": [
+          "#001302",
+          "#003015",
+          "#054f31",
+          "#307050",
+          "#539270",
+          "#75b692",
+          "#99dab6",
+          "#c6fedd"
+        ]
+      },
+      "fat": {
+        "role": "primary",
+        "displayName": "구운 아몬드 갈색 (Roasted Almond)",
+        "canonical": "oklch(59.2% 0.109 52)",
+        "tonalRamp": [
+          "#200000",
+          "#431400",
+          "#692f00",
+          "#904d1b",
+          "#b56e40",
+          "#d69369",
+          "#f6ba95",
+          "#ffe2c2"
+        ]
+      },
+      "landing-ground": {
+        "role": "neutral",
+        "displayName": "이끼 낀 밤 (Moss Night)",
+        "canonical": "oklch(18.2% 0.007 164)",
+        "tonalRamp": [
+          "#080c0a",
+          "#222624",
+          "#3f4341",
+          "#5e6360",
+          "#7e8481",
+          "#a1a6a4",
+          "#c5cbc8",
+          "#eaf0ed"
+        ]
+      },
+      "landing-floor": {
+        "role": "neutral",
+        "displayName": "젖은 바닥 (Wet Floor, 3D 전용)",
+        "canonical": "oklch(21.9% 0.011 163)",
+        "tonalRamp": [
+          "#070d0a",
+          "#202724",
+          "#3d4440",
+          "#5c635f",
+          "#7d8480",
+          "#9fa7a3",
+          "#c3cbc7",
+          "#e8f1ec"
+        ]
+      },
+      "landing-ink": {
+        "role": "neutral",
+        "displayName": "서리 잉크 (Frost Ink)",
+        "canonical": "oklch(94.8% 0.009 128)",
+        "tonalRamp": [
+          "#0a0c08",
+          "#242622",
+          "#41433e",
+          "#60625d",
+          "#81837e",
+          "#a3a6a0",
+          "#c7cac4",
+          "#edf0ea"
+        ]
+      },
+      "landing-muted": {
+        "role": "neutral",
+        "displayName": "이끼 회색 (Moss Grey)",
+        "canonical": "oklch(73.5% 0.013 156)",
+        "tonalRamp": [
+          "#070d09",
+          "#202722",
+          "#3c443f",
+          "#5b645e",
+          "#7c857f",
+          "#9fa8a2",
+          "#c3ccc6",
+          "#e8f1eb"
+        ]
+      },
+      "landing-line": {
+        "role": "neutral",
+        "displayName": "머리카락 선 (Hairline)",
+        "canonical": "rgba(236, 239, 233, 0.14)",
+        "tonalRamp": [
+          "#0a0c08",
+          "#242622",
+          "#41433e",
+          "#60625d",
+          "#81837e",
+          "#a3a6a0",
+          "#c7cac4",
+          "#edf0ea"
+        ]
+      },
+      "carb-ink": {
+        "role": "secondary",
+        "displayName": "밝은 금빛 (랜딩 글자용)",
+        "canonical": "oklch(79.0% 0.120 80)",
+        "tonalRamp": [
+          "#1a0500",
+          "#3a1e00",
+          "#5d3a00",
+          "#825800",
+          "#a57a22",
+          "#c59e59",
+          "#e6c488",
+          "#ffeab8"
+        ]
+      },
+      "protein-ink": {
+        "role": "secondary",
+        "displayName": "밝은 초록 (랜딩 글자용)",
+        "canonical": "oklch(75.2% 0.083 159)",
+        "tonalRamp": [
+          "#001302",
+          "#003016",
+          "#064f32",
+          "#307050",
+          "#539271",
+          "#76b593",
+          "#99dab6",
+          "#c5fede"
+        ]
+      },
+      "fat-ink": {
+        "role": "secondary",
+        "displayName": "밝은 갈색 (랜딩 글자용)",
+        "canonical": "oklch(71.3% 0.111 52)",
+        "tonalRamp": [
+          "#200000",
+          "#431400",
+          "#692f00",
+          "#914c1b",
+          "#b66e3f",
+          "#d79369",
+          "#f7ba96",
+          "#ffe2c3"
+        ]
+      },
+      "app-ground": {
+        "role": "neutral",
+        "displayName": "따뜻한 미색 (Warm Paper), 유지 여부 사용자 결정 대기",
+        "canonical": "oklch(96.7% 0.007 88)",
+        "tonalRamp": [
+          "#0c0b08",
+          "#262521",
+          "#43423e",
+          "#63615d",
+          "#84827e",
+          "#a7a5a0",
+          "#cbc9c4",
+          "#f0eee9"
+        ]
+      },
+      "app-card": {
+        "role": "neutral",
+        "displayName": "흰 카드 (Card White)",
+        "canonical": "oklch(100.0% 0.000 89)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "app-text": {
+        "role": "neutral",
+        "displayName": "먹색 (Ink Green-Black)",
+        "canonical": "oklch(25.4% 0.009 159)",
+        "tonalRamp": [
+          "#080c0a",
+          "#212623",
+          "#3e4440",
+          "#5d635f",
+          "#7e8480",
+          "#a0a7a3",
+          "#c4cbc7",
+          "#eaf0ec"
+        ]
+      },
+      "app-muted": {
+        "role": "neutral",
+        "displayName": "회녹색 (Sage Grey)",
+        "canonical": "oklch(54.2% 0.010 156)",
+        "tonalRamp": [
+          "#080c0a",
+          "#212623",
+          "#3e4440",
+          "#5d635f",
+          "#7e8480",
+          "#a0a7a3",
+          "#c4cbc7",
+          "#eaf0ec"
+        ]
+      },
+      "app-line": {
+        "role": "neutral",
+        "displayName": "모래 선 (Sand Line)",
+        "canonical": "oklch(90.8% 0.012 84)",
+        "tonalRamp": [
+          "#0d0b06",
+          "#28251f",
+          "#45423b",
+          "#64615a",
+          "#85827b",
+          "#a8a59d",
+          "#cdc9c1",
+          "#f2eee6"
+        ]
+      },
+      "app-accent": {
+        "role": "primary",
+        "displayName": "숲 초록 (Forest Accent, 앱 강조색)",
+        "canonical": "oklch(49.0% 0.084 159)",
+        "tonalRamp": [
+          "#001302",
+          "#003015",
+          "#054f31",
+          "#307050",
+          "#539270",
+          "#75b692",
+          "#99dab6",
+          "#c6fedd"
+        ]
+      },
+      "app-accent-soft": {
+        "role": "neutral",
+        "displayName": "연초록 (Mint Wash)",
+        "canonical": "oklch(94.1% 0.016 160)",
+        "tonalRamp": [
+          "#060d09",
+          "#1f2822",
+          "#3b453f",
+          "#5a645e",
+          "#7b857f",
+          "#9da8a2",
+          "#c1ccc6",
+          "#e6f2eb"
+        ]
+      },
+      "app-rec-muted": {
+        "role": "neutral",
+        "displayName": "추천 회녹",
+        "canonical": "oklch(48.0% 0.035 159)",
+        "tonalRamp": [
+          "#000f06",
+          "#152a1f",
+          "#32483c",
+          "#50685a",
+          "#71897b",
+          "#93ac9e",
+          "#b7d1c1",
+          "#dcf6e7"
+        ]
+      },
+      "app-rec-line": {
+        "role": "neutral",
+        "displayName": "추천 선",
+        "canonical": "oklch(87.7% 0.027 155)",
+        "tonalRamp": [
+          "#030e07",
+          "#1a2920",
+          "#37463c",
+          "#55665b",
+          "#76877c",
+          "#98aa9e",
+          "#bccfc2",
+          "#e1f4e7"
+        ]
+      },
+      "app-danger": {
+        "role": "error",
+        "displayName": "벽돌 빨강 (Brick)",
+        "canonical": "oklch(53.8% 0.148 28)",
+        "tonalRamp": [
+          "#220000",
+          "#460e0a",
+          "#6d2922",
+          "#97443b",
+          "#bd665b",
+          "#dc8d82",
+          "#fcb4aa",
+          "#ffddd4"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "landing-display": {
+        "displayName": "랜딩 Display",
+        "purpose": "첫 화면 '식단 자동화' 한 번만."
+      },
+      "landing-headline": {
+        "displayName": "랜딩 Headline",
+        "purpose": "각 구간 제목."
+      },
+      "landing-figure": {
+        "displayName": "랜딩 Figure",
+        "purpose": "계산 결과 수치 하나(아몬드 94g)."
+      },
+      "landing-title": {
+        "displayName": "랜딩 Title",
+        "purpose": "기능 이름, 가닥 캡션 제목(22px, -ink 색, 2px 영양소 밑줄)."
+      },
+      "landing-body": {
+        "displayName": "랜딩 Body",
+        "purpose": "본문과 보조 문장, 모바일 16px."
+      },
+      "landing-caption": {
+        "displayName": "랜딩 Caption",
+        "purpose": "예시 데이터 출처 문장과 스크롤 안내."
+      },
+      "landing-mono": {
+        "displayName": "랜딩 Mono",
+        "purpose": "서버 로그 예시 전용."
+      },
+      "app-title": {
+        "displayName": "앱 Title",
+        "purpose": "페이지 제목 '오늘의 식단'."
+      },
+      "app-figure": {
+        "displayName": "앱 Figure",
+        "purpose": "하루 kcal."
+      },
+      "app-heading": {
+        "displayName": "앱 Heading",
+        "purpose": "카드 소제목(app-muted)."
+      },
+      "app-body": {
+        "displayName": "앱 Body",
+        "purpose": "표와 막대 라벨."
+      },
+      "app-label": {
+        "displayName": "앱 Label",
+        "purpose": "목표 입력 라벨."
+      }
+    },
+    "shadows": [
+      {
+        "name": "landing-3d-spot-carb",
+        "value": "SpotLight #d9a441 intensity 2.6 at (-4.2, 6.2, 3.2), angle 0.55, penumbra 0.8, castShadow",
+        "purpose": "탄수화물 색 그림자. CSS box-shadow가 아닌 Three.js 조명."
+      },
+      {
+        "name": "landing-3d-spot-protein",
+        "value": "SpotLight #2f6f4f intensity 7.5 at (4.4, 6.6, 2.2), angle 0.55, penumbra 0.8, castShadow",
+        "purpose": "단백질 색 그림자. 어두운 초록이라 더 세게."
+      },
+      {
+        "name": "landing-3d-spot-fat",
+        "value": "SpotLight #b06a3b intensity 2.8 at (0.6, 5.6, -4.6), angle 0.55, penumbra 0.8, castShadow",
+        "purpose": "지방 색 뒤쪽 테두리 빛."
+      },
+      {
+        "name": "landing-3d-fill",
+        "value": "HemisphereLight #b9c9c0 / #0f1311 0.35; Fog #0f1311 10-20; ACESFilmic; PCFSoftShadowMap 1024 (mobile 512), bias -0.0004",
+        "purpose": "바닥을 받치는 약한 채움광과 바닥색 안개."
+      },
+      {
+        "name": "landing-3d-strand-material",
+        "value": "MeshPhysicalMaterial metalness 0.45, roughness 0.3, clearcoat 1, clearcoatRoughness 0.08, envMapIntensity 0.95; RoomEnvironment PMREM 0.04",
+        "purpose": "크롬과 유리 사이의 클리어코트 금속 가닥."
+      },
+      {
+        "name": "landing-3d-floor-material",
+        "value": "MeshStandardMaterial #161c19, roughness 0.62, metalness 0.2, y -1.8, receiveShadow",
+        "purpose": "색 그림자가 섞이는 바닥."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "두 세계 공통 기본 감속 곡선(랜딩 버튼, 스크롤 안내, 앱 막대·칩·추천)."
+      },
+      {
+        "name": "landing-knot-intro",
+        "value": "gsap state.intro 1 -> 0, 2.4s expo.out, delay 0.15s",
+        "purpose": "로드 직후 느슨한 매듭이 조여짐."
+      },
+      {
+        "name": "landing-knot-idle-spin",
+        "value": "0.22 rad/s while strands are together",
+        "purpose": "매듭 자전. 풀릴 때 가장 가까운 정면 각도로 복귀."
+      },
+      {
+        "name": "landing-scroll-hint",
+        "value": "autoAlpha -> 0, .hero top top -> 15% top, scrub",
+        "purpose": "스크롤 안내 사라짐."
+      },
+      {
+        "name": "landing-unravel-pin",
+        "value": "#unravel pin, top top -> +=230%, scrub 0.8; captions at u 0.76 / 0.83 / 0.90 (+0.08 fade)",
+        "purpose": "매듭 -> 큰 고리 -> 세 고리로 풀기."
+      },
+      {
+        "name": "landing-canvas-fade",
+        "value": ".features top 70% -> top 15%, scrub",
+        "purpose": "기능 구간에서 3D가 사라지고 렌더 멈춤."
+      },
+      {
+        "name": "landing-reknot",
+        "value": ".cta top bottom -> top 15%, scrub 0.8; canvas returns .cta top 55% -> top 25%",
+        "purpose": "마지막에 다시 매듭으로 묶이며 버튼 옆으로 비킴."
+      },
+      {
+        "name": "landing-reduced-motion",
+        "value": "IntersectionObserver still frames: hero knot, unravel three rings, features no 3D, cta re-knot",
+        "purpose": "움직임 줄이기 또는 GSAP 없음: 구간별 정지 장면."
+      },
+      {
+        "name": "landing-scroll-hint-line",
+        "value": "scaleY 0 -> 1 then fade, 2.4s ease-out infinite (none when reduced)",
+        "purpose": "스크롤 안내 1px 선."
+      },
+      {
+        "name": "landing-button",
+        "value": "transform 200ms ease-out, background-color 200ms; hover translateY(-2px); active scale(0.98)",
+        "purpose": "랜딩 주 버튼."
+      },
+      {
+        "name": "app-bar-grow",
+        "value": "clip-path 700ms ease-out",
+        "purpose": "재계산 시 진행 막대."
+      },
+      {
+        "name": "app-delta-pop",
+        "value": "2400ms ease-out forwards",
+        "purpose": "kcal 증감 칩."
+      },
+      {
+        "name": "app-rec-recalc",
+        "value": "head 450ms; steps unroll 650ms +80ms; pick wash 1600ms +350ms",
+        "purpose": "추천 변경 시 근거 펼침."
+      },
+      {
+        "name": "app-button-press",
+        "value": "transform 120ms ease-out, opacity 150ms; active scale(0.97)",
+        "purpose": "앱 버튼."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "landing-mobile",
+        "value": "760px"
+      },
+      {
+        "name": "landing-portrait-stage",
+        "value": "aspect < 0.8 (JS)"
+      },
+      {
+        "name": "app-form-collapse",
+        "value": "560px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "랜딩 주 버튼",
+      "kind": "button",
+      "refersTo": "landing-button-primary",
+      "description": "랜딩 맨 끝 하나뿐인 알약형 '시작하기'.",
+      "html": "<div class=\"ds-landing-stage\"><a class=\"ds-landing-btn\" href=\"#\">시작하기</a></div>",
+      "css": ".ds-landing-stage{background:#0f1311;padding:32px;font-family:\"Pretendard Variable\",Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#ecefe9;font-size:17px;line-height:1.6}.ds-landing-btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:0 34px;border-radius:999px;background:#ecefe9;color:#0f1311;font-size:18px;font-weight:700;text-decoration:none;white-space:nowrap;transition:transform 200ms cubic-bezier(0.16,1,0.3,1),background-color 200ms}.ds-landing-btn:hover{background:#ffffff;transform:translateY(-2px)}.ds-landing-btn:active{transform:translateY(0) scale(0.98)}.ds-landing-btn:focus-visible{outline:2px solid #e2b25a;outline-offset:4px}"
+    },
+    {
+      "name": "랜딩 가닥 캡션",
+      "kind": "custom",
+      "refersTo": "landing-title",
+      "description": "풀린 고리 옆에 붙는 영양소 이름(-ink 색, 영양소 색 2px 밑줄)과 시드 수치 문장.",
+      "html": "<div class=\"ds-landing-stage\"><div class=\"ds-strand\"><h3>탄수화물</h3><p>쌀밥 100g에는 <strong>45g</strong>이 들어 있어요.</p></div></div>",
+      "css": ".ds-landing-stage{background:#0f1311;padding:32px;font-family:\"Pretendard Variable\",Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#ecefe9;font-size:17px;line-height:1.6}.ds-strand{text-align:center;max-width:320px}.ds-strand h3{margin:0;display:inline-block;font-size:22px;font-weight:700;color:#e2b25a;padding-bottom:4px;border-bottom:2px solid #d9a441}.ds-strand p{margin:8px 0 0;color:#a3aca6;word-break:keep-all}.ds-strand strong{color:#ecefe9;font-weight:600;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "랜딩 추천 사슬",
+      "kind": "custom",
+      "refersTo": "landing-figure",
+      "description": "목표 대비 부족 비율 막대, 선택된 영양소, 결과 수치.",
+      "html": "<div class=\"ds-landing-stage\"><ul class=\"ds-chain\"><li style=\"--c:#d9a441;--w:68%\"><span>탄수화물</span><b></b><span>68%</span></li><li style=\"--c:#2f6f4f;--w:11%\"><span>단백질</span><b></b><span>11%</span></li><li class=\"pick\" style=\"--c:#b06a3b;--w:94%\"><span>지방</span><b></b><span>94%</span></li></ul><p class=\"ds-result\">아몬드 94g</p></div>",
+      "css": ".ds-landing-stage{background:#0f1311;padding:32px;font-family:\"Pretendard Variable\",Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#ecefe9;font-size:17px;line-height:1.6}.ds-chain{display:grid;gap:8px;margin:0;padding:0;list-style:none;font-variant-numeric:tabular-nums;max-width:460px}.ds-chain li{display:grid;grid-template-columns:5em 1fr 3.2em;align-items:center;gap:14px;color:#a3aca6}.ds-chain li b{display:block;height:6px;width:var(--w);border-radius:3px;background:var(--c)}.ds-chain li span:last-child{text-align:right}.ds-chain li.pick{color:#ecefe9;font-weight:650}.ds-result{margin:22px 0 0;font-size:48px;font-weight:800;letter-spacing:-0.035em;line-height:1.05}"
+    },
+    {
+      "name": "랜딩 서버 로그",
+      "kind": "custom",
+      "refersTo": "landing-mono",
+      "description": "머리카락 선 아래 실제 21:00 스케줄러 형식 로그.",
+      "html": "<div class=\"ds-landing-stage\"><pre class=\"ds-log\"><span class=\"t\">21:00</span> [demo 추천] 아몬드 94.0g - 지방이 목표보다 46.9g 부족해요</pre></div>",
+      "css": ".ds-landing-stage{background:#0f1311;padding:32px;font-family:\"Pretendard Variable\",Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#ecefe9;font-size:17px;line-height:1.6}.ds-log{margin:0;padding:18px 0 0;border-top:1px solid rgba(236,239,233,0.14);font:14px/1.75 ui-monospace,\"Cascadia Mono\",Consolas,\"D2Coding\",monospace;color:#cfd6d1;white-space:pre-wrap;word-break:break-all}.ds-log .t{color:#a3aca6}"
+    },
+    {
+      "name": "앱 주 버튼",
+      "kind": "button",
+      "refersTo": "app-button-primary",
+      "description": "앱 세계의 숲 초록 버튼(추가, 저장, 검색, 로그인).",
+      "html": "<div class=\"ds-app-ground\"><button class=\"ds-app-btn\">추가</button> <button class=\"ds-app-btn\" disabled>저장</button></div>",
+      "css": ".ds-app-ground{background:#f6f4ef;padding:24px;font-family:Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#1f2421}.ds-app-btn{font:inherit;padding:9px 12px;border-radius:8px;border:none;background:#2f6f4f;color:#fff;cursor:pointer;transition:transform 120ms cubic-bezier(0.16,1,0.3,1),opacity 150ms}.ds-app-btn:hover{opacity:0.9}.ds-app-btn:active:not(:disabled){transform:scale(0.97)}.ds-app-btn:disabled{opacity:0.5;cursor:default}"
+    },
+    {
+      "name": "앱 ghost 버튼",
+      "kind": "button",
+      "refersTo": "app-button-ghost",
+      "description": "로그아웃 같은 보조 행동.",
+      "html": "<div class=\"ds-app-ground\"><button class=\"ds-app-ghost\">로그아웃</button></div>",
+      "css": ".ds-app-ground{background:#f6f4ef;padding:24px;font-family:Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#1f2421}.ds-app-ghost{font:inherit;font-size:13px;padding:6px 10px;border-radius:8px;background:none;color:#6b716d;border:1px solid #e4e0d8;cursor:pointer}.ds-app-ghost:hover{opacity:0.9}"
+    },
+    {
+      "name": "앱 입력칸",
+      "kind": "input",
+      "refersTo": "app-input",
+      "description": "흰 면, 모래 선 테두리, 8px 모서리. 포커스는 브라우저 기본 외곽선.",
+      "html": "<div class=\"ds-app-ground\"><label class=\"ds-app-field\">탄수화물(g)<input class=\"ds-app-input\" type=\"number\" value=\"250\"></label></div>",
+      "css": ".ds-app-ground{background:#f6f4ef;padding:24px;font-family:Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#1f2421}.ds-app-field{display:grid;gap:4px;font-size:12px;color:#6b716d}.ds-app-input{font:inherit;font-size:16px;padding:9px 12px;border-radius:8px;border:1px solid #e4e0d8;background:#fff;color:#1f2421}"
+    },
+    {
+      "name": "앱 요약 카드",
+      "kind": "card",
+      "refersTo": "app-card",
+      "description": "하루 kcal과 세 영양소 진행 막대.",
+      "html": "<div class=\"ds-app-ground\"><section class=\"ds-app-card\"><h2>하루 요약</h2><div class=\"ds-kcal\">628 <small>/ 2000 kcal · 3끼</small></div><div class=\"ds-bar\"><div style=\"--p:32%;background:#d9a441\"></div></div><div class=\"ds-bar\"><div style=\"--p:89%;background:#2f6f4f\"></div></div><div class=\"ds-bar\"><div style=\"--p:6%;background:#b06a3b\"></div></div></section></div>",
+      "css": ".ds-app-ground{background:#f6f4ef;padding:24px;font-family:Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#1f2421}.ds-app-card{background:#fff;border:1px solid #e4e0d8;border-radius:14px;padding:20px}.ds-app-card h2{margin:0 0 14px;font-size:16px;color:#6b716d;font-weight:600}.ds-kcal{font-size:40px;font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums}.ds-kcal small{font-size:16px;color:#6b716d;font-weight:500}.ds-bar{height:8px;background:#e4e0d8;border-radius:4px;overflow:hidden;margin-top:10px}.ds-bar>div{height:100%;clip-path:inset(0 calc(100% - var(--p,0%)) 0 0 round 4px)}"
+    },
+    {
+      "name": "앱 추천 카드",
+      "kind": "card",
+      "refersTo": "app-card-recommend",
+      "description": "연초록 면 추천 카드와 부족 비율 근거.",
+      "html": "<div class=\"ds-app-ground\"><section class=\"ds-rec\"><h2>다음 끼니 추천</h2><p class=\"ds-rec-head\"><strong>아몬드 94g</strong></p><ul class=\"ds-short\"><li><span>탄수화물</span><span>68%</span></li><li class=\"pick\"><span>지방</span><span>94%</span></li></ul></section></div>",
+      "css": ".ds-app-ground{background:#f6f4ef;padding:24px;font-family:Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#1f2421}.ds-rec{background:#e3efe8;border:1px solid transparent;border-radius:14px;padding:20px;word-break:keep-all}.ds-rec h2{margin:0 0 14px;font-size:16px;color:#4d6457;font-weight:600}.ds-rec-head{margin:0;font-size:17px}.ds-rec-head strong{font-size:24px;letter-spacing:-0.5px}.ds-short{list-style:none;margin:16px 0 0;padding:16px 0 0;border-top:1px solid #c9dccf;display:grid;gap:4px}.ds-short li{display:flex;justify-content:space-between;font-size:14px;color:#4d6457;font-variant-numeric:tabular-nums;padding:2px 6px;border-radius:6px}.ds-short li.pick{color:#1f2421;font-weight:600}"
+    },
+    {
+      "name": "앱 증감 칩",
+      "kind": "chip",
+      "refersTo": "app-delta-chip",
+      "description": "재계산 후 kcal 옆에 잠깐 떠오르는 증감 표시.",
+      "html": "<div class=\"ds-app-ground\"><span class=\"ds-delta\">+300</span> <span class=\"ds-delta minus\">-108</span></div>",
+      "css": ".ds-app-ground{background:#f6f4ef;padding:24px;font-family:Pretendard,\"Apple SD Gothic Neo\",\"Malgun Gothic\",sans-serif;color:#1f2421}.ds-delta{display:inline-block;padding:2px 9px;border-radius:999px;font-size:14px;font-weight:600;color:#2f6f4f;background:#e3efe8}.ds-delta.minus{color:#4d6457;background:#e4e0d8}"
+    }
+  ],
+  "narrative": {
+    "northStar": "세 가닥, 두 바닥",
+    "overview": "이 프로젝트에는 일부러 서로 다른 바닥을 가진 두 시각 세계가 함께 있어요. **랜딩 세계**(`landing.html`)는 초록빛이 도는 거의 검은 바닥 위에서 하루 식단을 탄수화물·단백질·지방 세 가닥이 꼬인 하나의 매듭으로 보여 주고, 스크롤에 따라 매듭을 풀었다가 마지막에 다시 묶어요. 카드가 없고 머리카락처럼 얇은 선과 큰 글자, 버튼 하나로만 이루어진 설득용 무대예요. **앱 세계**(`index.html`, `login.html`)는 따뜻한 미색 바닥 위 흰 카드들로 이루어진 기존 운영 화면이에요. 기록하고, 다시 계산되는 걸 확인하고, 추천을 받는 밀도 높은 작업 화면이에요.\n\n두 세계를 잇는 다리는 두 가지예요. 하나는 **세 영양소 색**(`carb`, `protein`, `fat`)으로, 두 파일에서 같은 값으로 선언되고 같은 의미로만 쓰여요. 다른 하나는 **~해요 말투**예요. 그 밖의 바닥색, 표면, 버튼 모양, 글자 크기는 의도적으로 달라요. 랜딩은 어둡고 연극적이며, 앱은 밝고 조용해요. 새 화면은 먼저 어느 세계에 속하는지 정한 뒤 그 세계의 규칙만 따라요.\n\n앱 세계는 이 문서에서 **있는 그대로 기록**한 것이며 변경 제안이 아니에요. 앱의 미색 바닥(`app-ground`)은 감지 도구가 cream-palette로 표시했고, 이 바닥을 유지할지는 **사용자가 아직 결정하지 않은 열린 문제**예요. 이 문서는 그 결정을 내리지 않아요.",
+    "keyCharacteristics": [
+      "두 바닥: 랜딩은 어두운 초록빛 검정(`landing-ground`), 앱은 따뜻한 미색(`app-ground`). 서로 섞지 않아요.",
+      "세 영양소 색은 두 세계 공통의 유일한 색 언어예요.",
+      "랜딩: 카드 없음, 얇은 선만, 알약형 버튼 하나, Three.js 세 가닥 매듭과 GSAP 스크롤 문법.",
+      "앱: 흰 카드, 숲 초록 강조색 하나, 8px 모서리 컨트롤, 재계산을 보여 주는 작은 움직임.",
+      "숫자는 두 세계 모두 `tabular-nums`로 자릿수를 맞춰요.",
+      "한국어 UI, `lang=\"ko\"`, `word-break: keep-all`(랜딩 전체, 앱 추천 카드)."
+    ],
+    "rules": [
+      {
+        "name": "세 가닥 색 규칙 (The Three Strands Rule)",
+        "body": "`carb`, `protein`, `fat`은 언제나 각각 탄수화물·단백질·지방만 뜻해요. 장식이나 일반 강조에 빌려 쓰지 않고, 두 세계에서 값을 바꾸지 않아요.",
+        "section": "colors"
+      },
+      {
+        "name": "어두운 바닥 글자 규칙 (The Ink Tint Rule)",
+        "body": "랜딩의 어두운 바닥에서 영양소를 글자로 쓸 때는 `-ink` 색을 써요. 원래 영양소 색은 면, 선, 빛, 3D 재질에만 써요.",
+        "section": "colors"
+      },
+      {
+        "name": "두 바닥 규칙 (The Two Grounds Rule)",
+        "body": "랜딩 바닥과 앱 바닥은 서로의 화면에 들어가지 않아요. 앱 화면에 어두운 무대를, 랜딩에 흰 카드를 가져오지 않아요.",
+        "section": "colors"
+      },
+      {
+        "name": "한 번의 거대함 규칙 (The One Giant Rule)",
+        "body": "랜딩에서 Display 크기는 첫 화면 제목 하나에만 써요. 그다음으로 큰 글자는 실제로 계산된 숫자예요.",
+        "section": "typography"
+      },
+      {
+        "name": "맞춘 자릿수 규칙 (The Tabular Rule)",
+        "body": "kcal, g, % 같은 수치는 두 세계 모두 `font-variant-numeric: tabular-nums`로 써서 계산이 정확해 보이게 해요.",
+        "section": "typography"
+      },
+      {
+        "name": "빛으로만 깊이 규칙 (The Light-Only Depth Rule)",
+        "body": "랜딩의 깊이는 3D 조명과 그림자에서만 나와요. HTML 요소에 그림자, 블러, 유리 효과를 더하지 않아요.",
+        "section": "elevation"
+      },
+      {
+        "name": "평평한 카드 규칙 (The Flat Card Rule)",
+        "body": "앱 카드는 그림자 없이 테두리와 면 색으로만 구분돼요.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** 새 화면을 만들기 전에 랜딩 세계(어두운 무대, 설득)인지 앱 세계(밝은 카드, 작업)인지 먼저 정하고 그 세계의 토큰만 써요.",
+      "**Do** 탄수화물·단백질·지방은 언제나 `carb`·`protein`·`fat`(어두운 바닥 글자는 `-ink`)로 표시해요.",
+      "**Do** 랜딩에서는 구획을 1px `landing-line` 머리카락 선과 여백으로만 나눠요.",
+      "**Do** 랜딩의 주 행동은 알약형 버튼 하나(`landing-button-primary`)로 끝내요.",
+      "**Do** 랜딩의 3D 배경색과 CSS 바닥색을 같은 `landing-ground` 값으로 맞춰요.",
+      "**Do** 3D 움직임에는 항상 움직임 줄이기용 정지 장면과 WebGL 없음 대체 그림을 함께 둬요.",
+      "**Do** 수치는 `tabular-nums`, 단위(kcal, g, %, 100g당)를 붙여 써요.",
+      "**Do** 예시 데이터는 실제 시드 값(628kcal, 95.1 / 53.2 / 3.1g, 아몬드 94g)과 실제 로그 형식만 쓰고, 출처를 짧은 캡션으로 밝혀요.",
+      "**Do** 모든 문구를 ~해요 말투로 써요."
+    ],
+    "donts": [
+      "**Don't** 랜딩 세계에 카드, CSS 그림자, 블러/유리 효과를 넣지 않아요. (앱 세계의 흰 카드는 그 세계의 고유 재료이므로 이 금지에 해당하지 않아요.)",
+      "**Don't** 랜딩에 두 번째 버튼이나 첫 화면 버튼, 내비게이션 막대를 두지 않아요.",
+      "**Don't** `protein`(#2f6f4f)을 어두운 바닥 위 글자색으로 쓰지 않아요.",
+      "**Don't** 영양소 색을 영양소가 아닌 의미(성공, 경고, 장식)에 쓰지 않아요.",
+      "**Don't** 한 세계의 바닥색을 다른 세계 화면에 가져오지 않아요.",
+      "**Don't** 지어낸 사용자 수, 후기, 이용 통계를 보여 주지 않아요.",
+      "**Don't** 앱 세계의 미색 바닥을 이 문서를 근거로 바꾸거나 확정하지 않아요. 사용자가 결정할 문제예요."
+    ]
+  }
+}
