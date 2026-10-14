@@ -4,6 +4,7 @@ build/
 *.iml
 out/
 bin/
+.vscode/
 
 # H2 파일 DB
 data/
