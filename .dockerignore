@@ -3,4 +3,5 @@ build/
 bin/
 data/
 .idea/
-.vscode/
+.vscode/frontend/node_modules/
+frontend/dist/

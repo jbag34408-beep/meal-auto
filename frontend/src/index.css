@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* 앱 전체 색 (기존 HTML 화면과 같은 값) */
+@theme {
+  --font-sans: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --color-band: #0f1311;
+  --color-paper: #eef1ec;
+  --color-ink: #18201b;
+  --color-muted: #5b655f;
+  --color-line: #d5dbd4;
+  --color-accent: #2f6f4f;
+  --color-danger: #a63d33;
+  --color-carb: #d9a441;
+  --color-protein: #2f6f4f;
+  --color-fat: #b06a3b;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+}
+
+/* ───────── Liquid Glass ───────── */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  backdrop-filter: blur(10px) saturate(180%);
+  box-shadow:
+    /* 위쪽 안쪽으로 번지는 그늘 */
+    inset 0 12px 16px -10px rgba(0, 0, 0, 0.16),
+    /* 가장자리 안쪽의 옅은 두께감 */
+    inset 0 0 18px rgba(0, 0, 0, 0.05),
+    /* 아래쪽 굴절선 */
+    inset 0 -3px 1px -1px rgba(0, 0, 0, 0.88),
+    /* 양 끝 굴절선 */
+    inset 2px 0 1px -1px rgba(0, 0, 0, 0.55),
+    inset -2px 0 1px -1px rgba(0, 0, 0, 0.55),
+    /* 위쪽 가장자리 빛 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    /* 바깥 그림자 */
+    0 14px 30px -14px rgba(0, 0, 0, 0.28),
+    0 2px 6px -2px rgba(0, 0, 0, 0.08);
+}
+.liquid-glass:hover {
+  box-shadow:
+    inset 0 12px 16px -10px rgba(0, 0, 0, 0.16),
+    inset 0 0 18px rgba(0, 0, 0, 0.05),
+    inset 0 -2px 1px -1px rgba(0, 0, 0, 0.85),
+    inset 2px 0 1px -1px rgba(0, 0, 0, 0.6),
+    inset -2px 0 1px -1px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 18px 34px -14px rgba(0, 0, 0, 0.34),
+    0 3px 8px -2px rgba(0, 0, 0, 0.1);
+}
+.liquid-glass:active {
+  box-shadow:
+    inset 0 14px 20px -10px rgba(0, 0, 0, 0.22),
+    inset 0 0 22px rgba(0, 0, 0, 0.08),
+    inset 0 -2px 1px -1px rgba(0, 0, 0, 0.85),
+    inset 2px 0 1px -1px rgba(0, 0, 0, 0.6),
+    inset -2px 0 1px -1px rgba(0, 0, 0, 0.6),
+    0 8px 18px -12px rgba(0, 0, 0, 0.28);
+}
+/* 흐림 효과를 못 쓰는 브라우저: 불투명한 흰색으로 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass { background: #fbfbfa; }
+}
