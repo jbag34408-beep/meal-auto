@@ -69,7 +69,7 @@
       body: new URLSearchParams({ username, password }),
     });
     if (!res.ok) throw new Error("아이디 또는 비밀번호가 올바르지 않아요");
-    location.href = "/";
+    location.href = "index.html";
   }
 
   $("loginForm").addEventListener("submit", async (e) => {
