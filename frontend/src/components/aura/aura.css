@@ -1,0 +1,477 @@
+/* ───────── AURA 로그인 화면 (기준 이미지 1440×900 기준 값) ───────── */
+
+.aura {
+  --aura-font: "Space Grotesk", "Pretendard Variable", Pretendard, system-ui, sans-serif;
+  --aura-mono: "JetBrains Mono", "Space Mono", ui-monospace, monospace;
+
+  --aura-bg: #eef1f5;
+  --aura-ink: #0b0b0c;
+  --aura-muted: #5d6169;
+  --aura-faint: #9a9ea6;
+  --aura-label: #4a4e55;
+  --aura-placeholder: #a3a7ae;
+  --aura-fill: rgba(112, 118, 130, 0.13);
+  --aura-fill-hover: rgba(112, 118, 130, 0.19);
+  --aura-fill-focus: rgba(255, 255, 255, 0.45);
+  --aura-ring: rgba(11, 11, 12, 0.22);
+  --aura-line: rgba(11, 11, 12, 0.1);
+  --aura-glass: rgba(226, 229, 234, 0.42);
+  --aura-glass-edge: rgba(255, 255, 255, 0.4);
+  --aura-glass-shadow: 0 40px 90px -30px rgba(40, 52, 74, 0.22), 0 2px 10px rgba(40, 52, 74, 0.04);
+  --aura-button: #0b0b0c;
+  --aura-button-ink: #ffffff;
+  --aura-danger: #b3261e;
+
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--aura-bg);
+  color: var(--aura-ink);
+  font-family: var(--aura-font);
+  color-scheme: light;
+}
+
+.aura[data-theme="dark"] {
+  --aura-bg: #0c0d0f;
+  --aura-ink: #f4f5f7;
+  --aura-muted: #a4a9b2;
+  --aura-faint: #6e737c;
+  --aura-label: #b9bdc5;
+  --aura-placeholder: #6f747d;
+  --aura-fill: rgba(255, 255, 255, 0.07);
+  --aura-fill-hover: rgba(255, 255, 255, 0.11);
+  --aura-fill-focus: rgba(255, 255, 255, 0.12);
+  --aura-ring: rgba(255, 255, 255, 0.28);
+  --aura-line: rgba(255, 255, 255, 0.1);
+  --aura-glass: rgba(14, 15, 18, 0.48);
+  --aura-glass-edge: rgba(255, 255, 255, 0.08);
+  --aura-glass-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.7), 0 2px 10px rgba(0, 0, 0, 0.3);
+  --aura-button: #f4f5f7;
+  --aura-button-ink: #0b0b0c;
+  --aura-danger: #ff8a80;
+  color-scheme: dark;
+}
+
+/* ───────── 배경 ───────── */
+.aura-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* WebGL이 없거나 3D를 받는 동안 보이는 그라데이션 (이미지의 크롬 덩어리를 흉내) */
+.aura-backdrop-fallback {
+  position: absolute;
+  inset: 0;
+  filter: blur(18px);
+  transform: scale(1.06);
+  background:
+    radial-gradient(ellipse 34% 62% at 24% 52%, #f2f3f5 0%, #eceef1 55%, transparent 80%),
+    radial-gradient(ellipse 42% 82% at 26% 50%, transparent 68%, #a8b2c3 76%, #e4eaf4 82%, #b9c2d0 88%, transparent 96%),
+    radial-gradient(ellipse 60% 50% at 82% 18%, #f6f7f9 0%, transparent 70%),
+    linear-gradient(100deg, #dfe2e7 0%, #eceef1 40%, #f1f3f6 70%, #f4f6f9 100%);
+}
+.aura[data-theme="dark"] .aura-backdrop-fallback {
+  background:
+    radial-gradient(ellipse 34% 62% at 24% 52%, #2a2d32 0%, #1d1f23 60%, transparent 80%),
+    radial-gradient(ellipse 42% 82% at 26% 50%, transparent 68%, #4b4d52 76%, #222326 84%, transparent 96%),
+    linear-gradient(100deg, #111215 0%, #16181b 50%, #0d0e10 100%);
+}
+.aura-backdrop-scene {
+  position: absolute;
+  inset: -3%;
+  /* 이미지처럼 살짝 흐릿하고 몽환적으로 */
+  filter: blur(10px) saturate(0.92);
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+.aura-backdrop-scene[data-ready="true"] {
+  opacity: 1;
+}
+/* 가장자리를 배경색으로 옅게 덮는 안개 */
+.aura-backdrop-haze {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 85% 10%, color-mix(in srgb, var(--aura-bg) 55%, transparent), transparent 70%),
+    linear-gradient(to right, color-mix(in srgb, var(--aura-bg) 18%, transparent), transparent 30%);
+}
+
+/* ───────── 모서리 글씨 ───────── */
+.aura-meta {
+  position: absolute;
+  z-index: 2;
+  font-family: var(--aura-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--aura-faint);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.aura-meta-tl {
+  top: 41px;
+  left: 36px;
+}
+.aura-meta-bl {
+  bottom: 50px;
+  left: 36px;
+}
+.aura-cursor {
+  animation: aura-blink 1.05s step-end infinite;
+}
+@keyframes aura-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.aura-vertical {
+  position: absolute;
+  z-index: 2;
+  top: 189px;
+  right: 41px;
+  writing-mode: vertical-rl;
+  font-family: var(--aura-mono);
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  color: var(--aura-faint);
+  opacity: 0.85;
+  white-space: pre;
+}
+
+.aura-topbar {
+  position: absolute;
+  z-index: 3;
+  top: 41px;
+  right: 47px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.aura-version {
+  font-family: var(--aura-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--aura-muted);
+}
+.aura-theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 40px;
+  padding: 0 16px 0 15px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--aura-glass) 70%, var(--aura-fill));
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  color: var(--aura-ink);
+  font: 600 12px/1 var(--aura-font);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.aura-theme:hover {
+  background: var(--aura-fill-hover);
+}
+
+/* ───────── 카드 위치 ───────── */
+.aura-stage {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.aura-card {
+  position: absolute;
+  top: 50%;
+  right: 10.2vw;
+  transform: translateY(-50%);
+  width: 440px;
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 48px 48px 40px;
+  border-radius: 40px;
+  background: var(--aura-glass);
+  -webkit-backdrop-filter: blur(28px) saturate(135%);
+  backdrop-filter: blur(28px) saturate(135%);
+  box-shadow:
+    inset 0 0 0 1px var(--aura-glass-edge),
+    inset 0 1px 0 color-mix(in srgb, var(--aura-glass-edge) 80%, transparent),
+    var(--aura-glass-shadow);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .aura-card {
+    background: color-mix(in srgb, var(--aura-bg) 92%, transparent);
+  }
+}
+
+/* ───────── 카드 내용 ───────── */
+.aura-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--aura-fill-hover);
+  font-family: var(--aura-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--aura-ink);
+  opacity: 0.85;
+}
+.aura-title {
+  margin-top: 11px;
+  font-size: 34px;
+  line-height: 1.12;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+.aura-subtitle {
+  margin-top: 4px;
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--aura-muted);
+}
+.aura-socials {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.aura-social {
+  display: grid;
+  place-items: center;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--aura-fill);
+  color: var(--aura-ink);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.aura-social:hover {
+  background: var(--aura-fill-hover);
+}
+.aura-social:active {
+  transform: scale(0.97);
+}
+.aura-notice {
+  height: 0;
+  overflow: visible;
+  text-align: center;
+  font-size: 12px;
+  color: var(--aura-muted);
+  transform: translateY(6px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.aura-notice[data-show="true"] {
+  opacity: 1;
+}
+.aura-divider {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--aura-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+  color: var(--aura-faint);
+}
+.aura-divider::before,
+.aura-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--aura-line);
+}
+.aura-label {
+  display: block;
+  margin-top: 30px;
+  margin-bottom: 8px;
+  padding-left: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--aura-label);
+}
+.aura-label-next {
+  margin-top: 15px;
+}
+.aura-input {
+  display: block;
+  width: 100%;
+  height: 56px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--aura-fill);
+  color: var(--aura-ink);
+  font: 400 15px var(--aura-font);
+  outline: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.aura-input::placeholder {
+  color: var(--aura-placeholder);
+}
+.aura-input[type="password"]::placeholder {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.aura-input:hover {
+  background: var(--aura-fill-hover);
+}
+.aura-input:focus-visible {
+  background: var(--aura-fill-focus);
+  box-shadow: 0 0 0 1px var(--aura-ring);
+}
+.aura-input:disabled {
+  opacity: 0.6;
+}
+.aura-error {
+  min-height: 40px;
+  padding: 10px 16px 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--aura-danger);
+  word-break: keep-all;
+}
+.aura-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--aura-button);
+  color: var(--aura-button-ink);
+  font: 700 16px/1 var(--aura-font);
+  letter-spacing: 0.005em;
+  cursor: pointer;
+  box-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.55);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.aura-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 34px -18px rgba(0, 0, 0, 0.6);
+}
+.aura-submit:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+.aura-submit:disabled {
+  cursor: progress;
+  opacity: 0.85;
+}
+.aura-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--aura-button-ink) 30%, transparent);
+  border-top-color: var(--aura-button-ink);
+  animation: aura-spin 0.8s linear infinite;
+}
+@keyframes aura-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.aura-links {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--aura-muted);
+}
+.aura-link {
+  color: var(--aura-ink);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--aura-line);
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: text-decoration-color 0.2s ease;
+}
+.aura-link:hover {
+  text-decoration-color: currentColor;
+}
+.aura-link-muted {
+  color: var(--aura-muted);
+  font-weight: 400;
+  font-size: 12px;
+}
+.aura-link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.aura :focus-visible:not(.aura-input) {
+  outline: 2px solid var(--aura-ring);
+  outline-offset: 3px;
+}
+
+/* ───────── 반응형 ───────── */
+@media (max-width: 1279px) {
+  .aura-card {
+    right: auto;
+    left: calc(50% - 220px + 6vw);
+  }
+}
+@media (max-width: 767px) {
+  .aura {
+    overflow-y: auto;
+  }
+  .aura-vertical {
+    display: none;
+  }
+  .aura-meta-tl {
+    top: 30px;
+    left: 20px;
+  }
+  .aura-meta-bl {
+    bottom: 18px;
+    left: 20px;
+  }
+  .aura-topbar {
+    top: 18px;
+    right: 16px;
+    gap: 10px;
+  }
+  .aura-stage {
+    height: auto;
+    min-height: 100%;
+    padding: 76px 16px 48px;
+  }
+  .aura-card {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding: 36px 24px 28px;
+    border-radius: 32px;
+  }
+  .aura-title {
+    font-size: 30px;
+  }
+  .aura-socials {
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aura *,
+  .aura *::before,
+  .aura *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .aura-spinner {
+    animation: aura-spin 1.6s linear infinite !important;
+  }
+}
