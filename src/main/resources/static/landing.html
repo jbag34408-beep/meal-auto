@@ -24,6 +24,7 @@
     font-size: 17px; line-height: 1.6; word-break: keep-all; -webkit-font-smoothing: antialiased;
   }
   p { text-wrap: pretty; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   ::selection { background: var(--carb); color: var(--bg); }
   a:focus-visible { outline: 2px solid var(--carb-ink); outline-offset: 4px; }
 
@@ -31,29 +32,54 @@
   main { position: relative; z-index: 1; }
   section { padding: 0 var(--gutter); }
 
-  /* 첫 화면 */
-  .hero { min-height: 100vh; min-height: 100svh; position: relative; padding-top: clamp(28px, 6vh, 72px); }
+  /* 첫 화면: 세 가닥이 꼬인 띠를 입자로 다시 만든 조각. 커서가 닿으면 액체처럼 풀렸다가 돌아옴 */
+  .hero {
+    position: relative; z-index: 2; height: 100vh; height: 100svh; min-height: 560px; padding: 0;
+    display: flex; flex-direction: column; overflow: hidden; background: var(--bg); touch-action: pan-y;
+  }
+  .hero-stage { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 500ms ease; }
+  .hero-still { position: absolute; display: block; max-width: none; user-select: none; -webkit-user-drag: none; transition: opacity 500ms ease; }
+  .hero[data-gl="on"] .hero-canvas { opacity: 1; }
+  .hero[data-gl="on"] .hero-still { opacity: 0; }
+
+  .hero-nav { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+              padding: clamp(18px, 3vh, 28px) var(--gutter) 0; }
+  .hero-brand { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
+  .hero-links { display: flex; align-items: center; gap: 8px; }
+  .hero-links a { color: var(--ink); text-decoration: none; font-size: 15px; padding: 8px 14px; border-radius: 999px; }
+  .hero-links .login { color: var(--muted); }
+  .hero-links .login:hover { color: var(--ink); }
+  .hero-links .start { border: 1px solid var(--line); transition: background-color 200ms, color 200ms; }
+  .hero-links .start:hover { background: var(--ink); color: var(--bg); }
+
+  .hero-hint {
+    position: absolute; z-index: 1; transform: translateX(-50%); display: flex; align-items: center; gap: 10px;
+    white-space: nowrap; font-size: 14px; color: var(--muted); pointer-events: none; transition: opacity 800ms ease;
+  }
+  .hero-hint::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--carb-ink); }
+  .hero[data-touched="1"] .hero-hint { opacity: 0; }
+
+  .hero-spacer { flex: 1 1 auto; min-height: 0; }
+  .hero-copy {
+    position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: end; gap: 24px clamp(24px, 4vw, 72px); padding: 0 var(--gutter) clamp(32px, 6vh, 64px);
+  }
   h1 {
-    margin: 0; font-size: clamp(56px, 10.5vw, 148px); font-weight: 800; line-height: 0.98;
+    margin: 0; font-size: clamp(56px, min(10.5vw, 15vh), 148px); font-weight: 800; line-height: 0.98;
     letter-spacing: -0.04em;
   }
-  .lede { margin: clamp(14px, 2vh, 22px) 0 0; max-width: 24ch; font-size: clamp(17px, 1.6vw, 21px); color: var(--muted); }
-  .scroll-hint {
-    position: absolute; left: 50%; bottom: clamp(20px, 4vh, 40px); transform: translateX(-50%);
-    margin: 0; display: grid; justify-items: center; gap: 10px; font-size: 14px; color: var(--muted);
-  }
-  .scroll-hint i { display: block; width: 1px; height: 36px; background: linear-gradient(var(--muted), transparent);
-                   transform-origin: top; animation: hint 2.4s var(--ease-out) infinite; }
-  @keyframes hint { 0% { transform: scaleY(0); opacity: 1; } 70% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
+  .hero-aside { max-width: 400px; justify-self: end; padding-bottom: 0.5em; }
+  .lede { margin: 0; font-size: clamp(17px, 1.5vw, 20px); color: var(--muted); }
+  .hero-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 24px; }
+  .hero-ctas .button { margin-top: 0; min-height: 52px; padding: 0 28px; font-size: 17px; }
+  .text-link { color: var(--ink); text-decoration: none; padding: 4px 0; border-bottom: 1px solid var(--line); }
+  .text-link:hover { border-bottom-color: var(--ink); }
+  .hero a:focus-visible { outline: 2px solid var(--carb-ink); outline-offset: 4px; }
+  .credit { position: absolute; z-index: 2; right: var(--gutter); bottom: 10px; font-size: 11px; color: var(--muted);
+            opacity: 0.6; text-decoration: none; }
+  .credit:hover { opacity: 1; }
 
-  /* WebGL을 쓸 수 없을 때 첫 화면에 남기는 세 고리 */
-  .fallback { display: none; position: absolute; left: 50%; top: 56%; width: min(64vw, 360px); aspect-ratio: 1.4;
-              transform: translate(-50%, -50%); }
-  .fallback span { position: absolute; top: 0; width: 58%; aspect-ratio: 1; border-radius: 50%; border: 10px solid; opacity: 0.9; }
-  .fallback span:nth-child(1) { left: 0; border-color: var(--carb); }
-  .fallback span:nth-child(2) { left: 21%; top: 26%; border-color: var(--protein); }
-  .fallback span:nth-child(3) { left: 42%; border-color: var(--fat); }
-  .no-stage .fallback { display: block; }
   .no-stage #stage { display: none; }
 
   /* 매듭이 풀리는 구간 */
@@ -126,6 +152,10 @@
 
   @media (max-width: 760px) {
     body { font-size: 16px; }
+    .hero-copy { grid-template-columns: 1fr; }
+    .hero-aside { justify-self: start; padding-bottom: 0; }
+    .hero-links .login { display: none; }
+    .credit { right: auto; left: 50%; transform: translateX(-50%); white-space: nowrap; }
     .f-calc, .f-rec, .f-report, .f-report .text, .f-report .log-wrap { grid-column: 1 / -1; }
     .f-report { grid-template-columns: minmax(0, 1fr); }
     .log { font-size: 13px; }
@@ -136,7 +166,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .scroll-hint i { animation: none; }
+    .hero-canvas, .hero-still { transition: none; }
     .button { transition: none; }
   }
   /* 움직임을 줄이면 3D는 첫 화면의 정지 이미지로만 남음 */
@@ -146,11 +176,34 @@
 <canvas id="stage" aria-hidden="true"></canvas>
 
 <main>
-  <section class="hero">
-    <h1>식단 자동화</h1>
-    <p class="lede">먹은 음식을 기록하면 영양을 계산하고 다음 끼니를 추천해요.</p>
-    <div class="fallback" aria-hidden="true"><span></span><span></span><span></span></div>
-    <p class="scroll-hint"><span>스크롤해 보세요</span><i aria-hidden="true"></i></p>
+  <section class="hero" id="hero">
+    <div class="hero-stage" id="heroStage" aria-hidden="true">
+      <img class="hero-still" id="heroStill" alt="">
+    </div>
+    <span class="sr-only">탄수화물, 단백질, 지방 세 가닥이 하나로 꼬인 띠</span>
+
+    <nav class="hero-nav" id="heroNav" aria-label="주 메뉴">
+      <a class="hero-brand" href="/landing.html">식단 자동화</a>
+      <div class="hero-links">
+        <a class="login" href="/login.html">로그인</a>
+        <a class="start" href="/index.html">시작하기</a>
+      </div>
+    </nav>
+
+    <div class="hero-hint" id="heroHint" aria-hidden="true">가닥 위로 커서를 움직여 보세요</div>
+    <div class="hero-spacer"></div>
+
+    <div class="hero-copy" id="heroCopy">
+      <h1>식단 자동화</h1>
+      <div class="hero-aside">
+        <p class="lede">먹은 음식을 적으면 탄수화물, 단백질, 지방을 계산하고 다음 끼니를 추천해요.</p>
+        <div class="hero-ctas">
+          <a class="button" href="/index.html">시작하기</a>
+          <a class="text-link" href="#unravel">어떻게 계산하나요</a>
+        </div>
+      </div>
+    </div>
+    <a class="credit" href="https://guglielmogiannattasio.it" target="_blank" rel="noopener">입자 효과: guglielmogiannattasio.it</a>
   </section>
 
   <section class="unravel" id="unravel" aria-labelledby="unravelTitle">
@@ -464,7 +517,11 @@
     }
 
     // 화면에 보일 때만 그리고, 탭이 숨겨지거나 3D가 완전히 사라지면 멈춤
-    const visible = () => !document.hidden && (1 - state.fade * (1 - state.fadeBack)) > 0.01;
+    // 첫 화면(불투명)이 화면을 거의 다 덮고 있으면 매듭은 안 보이므로 그리지 않음 (WebGL 두 개가 동시에 돌지 않게)
+    let heroCover = false;
+    new IntersectionObserver(([e]) => { heroCover = e.intersectionRatio > 0.97; wake(); },
+        { threshold: [0, 0.5, 0.97, 1] }).observe(document.querySelector(".hero"));
+    const visible = () => !document.hidden && !heroCover && (1 - state.fade * (1 - state.fadeBack)) > 0.01;
     function tick(now) {
       if (!visible()) { raf = 0; return; }
       render(now);
@@ -508,8 +565,6 @@
     gsap.registerPlugin(ScrollTrigger);
     const fadeCanvas = () => { canvas.style.opacity = (1 - state.fade * (1 - state.fadeBack)).toFixed(3); wake(); };
     gsap.to(state, { intro: 0, duration: 2.4, ease: "expo.out", delay: 0.15, onUpdate: wake });
-    gsap.to(".scroll-hint", { autoAlpha: 0, ease: "none",
-      scrollTrigger: { trigger: ".hero", start: "top top", end: "15% top", scrub: true } });
     gsap.to(state, { u: 1, ease: "none", onUpdate: wake,
       scrollTrigger: { trigger: "#unravel", start: "top top", end: "+=230%", pin: true, scrub: 0.8 } });
     gsap.to(state, { fade: 1, ease: "none", onUpdate: fadeCanvas,
@@ -523,6 +578,161 @@
     document.addEventListener("visibilitychange", wake);
     wake();
   }
+</script>
+
+<script type="module">
+  // 첫 화면: 세 가닥이 꼬인 띠를 캔버스에 직접 그리고, 그 픽셀로 액체 입자 조각을 만듦
+  import { LiquidEngine, clamp } from "/js/liquid-engine.js";
+
+  const hero = document.getElementById("hero");
+  const stage = document.getElementById("heroStage");
+  const still = document.getElementById("heroStill");
+  const nav = document.getElementById("heroNav");
+  const copy = document.getElementById("heroCopy");
+  const hint = document.getElementById("heroHint");
+
+  // ── 띠 그리기 ───────────────────────────────────────────────
+  // 가닥마다 [그림자, 몸통, 빛] 색. 단백질은 어두운 바탕에서 보이도록 앱보다 밝힌 초록
+  const STRANDS = [
+    [[138, 100, 32], [217, 164, 65], [246, 214, 146]],   // 탄수화물
+    [[31, 77, 54], [63, 138, 100], [163, 219, 188]],     // 단백질
+    [[110, 61, 31], [176, 106, 59], [236, 170, 126]],    // 지방
+  ];
+  const mix = (a, b, t) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`;
+
+  function drawBraid(W, H) {
+    const c = document.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    const ctx = c.getContext("2d");
+    const x0 = W * 0.04, x1 = W * 0.96, len = x1 - x0;
+    const amp = H * 0.25, turns = 3.25, base = H * 0.085, step = 2;
+    const count = Math.ceil(len / step);
+
+    // 가닥마다 중심선 위의 점(x, y), 굵기(w), 앞뒤(z), 위쪽을 향한 법선(nx, ny)을 미리 계산
+    const strands = [0, 1, 2].map((i) => {
+      const pts = [];
+      for (let k = 0; k <= count; k++) {
+        const x = x0 + (len * k) / count, t = (x - x0) / len;
+        const env = Math.pow(Math.sin(Math.PI * t), 0.55);           // 양 끝은 한 점으로 모임
+        const u = t * turns * Math.PI * 2 + (i * Math.PI * 2) / 3;
+        pts.push({ x, y: H / 2 + amp * Math.sin(u) * env, z: Math.cos(u), w: base * (0.35 + 0.65 * env) });
+      }
+      pts.forEach((p, k) => {
+        const a = pts[Math.max(0, k - 1)], b = pts[Math.min(count, k + 1)];
+        const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1;
+        p.nx = dy / l;
+        p.ny = -dx / l;                                                // 화면 위쪽을 향함
+      });
+      return pts;
+    });
+
+    // 중심선에서 법선 방향으로 [from, to]만큼 떨어진 띠 조각(사각형)을 채움 → 이음매 없이 이어짐
+    const band = (p, q, from, to, color) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(p.x + p.nx * p.w * from, p.y + p.ny * p.w * from);
+      ctx.lineTo(q.x + q.nx * q.w * from + 0.4, q.y + q.ny * q.w * from);
+      ctx.lineTo(q.x + q.nx * q.w * to + 0.4, q.y + q.ny * q.w * to);
+      ctx.lineTo(p.x + p.nx * p.w * to, p.y + p.ny * p.w * to);
+      ctx.closePath();
+      ctx.fill();
+    };
+
+    for (let k = 0; k < count; k++) {
+      // 이 구간에서 뒤에 있는 가닥부터 그려야 위·아래로 꼬여 보임
+      const order = [0, 1, 2].sort((i, j) => strands[i][k].z - strands[j][k].z);
+      for (const i of order) {
+        const p = strands[i][k], q = strands[i][k + 1];
+        const [shadow, body, light] = STRANDS[i];
+        const depth = (p.z + 1) / 2;                                   // 뒤쪽일수록 어둡게
+        band(p, q, -0.5, 0.5, mix(shadow, [15, 19, 17], 0.35 * (1 - depth)));
+        band(p, q, -0.28, 0.44, mix(shadow, body, 0.35 + 0.65 * depth));
+        band(p, q, 0.1, 0.3, mix(body, light, 0.25 + 0.75 * depth));
+      }
+    }
+    return c;
+  }
+
+  // ── 배치: 메뉴와 문구 사이 띠 영역의 가운데 ───────────────
+  const ASPECT = 2.5;
+  function computeRect(w, h, band) {
+    const bandH = Math.max(80, band.bottom - band.top);
+    let rw, maxH;
+    if (w >= 1024) { rw = w * 1.0; maxH = bandH * 1.05; }
+    else if (w >= 640) { rw = w * 1.25; maxH = bandH * 1.1; }
+    else { rw = w * 2.5; maxH = bandH * 1.2; }
+    if (rw / ASPECT > maxH) rw = maxH * ASPECT;
+    const rh = rw / ASPECT;
+    const cx = w / 2, cy = (band.top + band.bottom) / 2;
+    return { x: cx - rw / 2, y: cy - rh / 2, w: rw, h: rh };
+  }
+
+  let engine = null;
+  function relayout() {
+    const w = hero.clientWidth, h = hero.clientHeight;
+    const band = { top: nav.offsetTop + nav.offsetHeight + 8, bottom: copy.offsetTop - 8 };
+    const r = computeRect(w, h, band);
+    Object.assign(still.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` });
+    hint.style.left = `${clamp(r.x + r.w / 2, 120, w - 120)}px`;
+    hint.style.top = `${Math.min(r.y + r.h * 0.92, band.bottom - 24)}px`;
+    engine?.resize(w, h, r);
+  }
+
+  const coarse = matchMedia("(hover: none), (pointer: coarse)").matches;
+  if (coarse) hint.textContent = "가닥을 손가락으로 저어 보세요";
+
+  const braid = drawBraid(2000, 800);
+  const image = new Image();
+  image.src = braid.toDataURL("image/png");
+  still.src = image.src;
+
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  const canvas = document.createElement("canvas");
+  canvas.className = "hero-canvas";
+  stage.appendChild(canvas);
+  const fail = () => { hero.dataset.gl = "off"; };
+  try {
+    engine = new LiquidEngine(canvas, {
+      interactive: true, strength: 1, radius: 200, density: 1, dotSize: 1, spread: 1, turbulence: 1,
+      returnSpeed: 1, streaks: true, restStyle: "image", ambient: false, ambientIntensity: 1, speed: 1,
+      intro: true, reducedMotion: reduce.matches, bg: [15 / 255, 19 / 255, 17 / 255], imgBg: null, liquid: 1,
+    }, fail);
+  } catch {
+    fail();   // WebGL2가 없으면 정지 이미지만 보여줌
+  }
+
+  new ResizeObserver(relayout).observe(hero);
+  [nav, copy].forEach((el) => new ResizeObserver(relayout).observe(el));
+  new IntersectionObserver(([e]) => engine?.setVisible(e.isIntersecting && !document.hidden)).observe(hero);
+  document.addEventListener("visibilitychange", () => engine?.setVisible(!document.hidden));
+  reduce.addEventListener?.("change", () => engine?.setOptions({ reducedMotion: reduce.matches }));
+
+  image.onload = () => {
+    relayout();
+    if (!engine || hero.dataset.gl === "off") return;
+    try {
+      engine.onFirstFrame = () => { hero.dataset.gl = "on"; };
+      engine.setImage(image);
+      relayout();
+    } catch {
+      fail();
+    }
+  };
+
+  // ── 커서·터치 ──────────────────────────────────────────────
+  const pos = (e) => { const b = hero.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+  const touched = () => { hero.dataset.touched = "1"; };
+  hero.addEventListener("pointermove", (e) => {
+    const touch = e.pointerType === "touch";
+    if (touch && e.buttons === 0 && e.pressure === 0) return;
+    engine?.pointer("move", ...pos(e), touch);
+    touched();
+  }, { passive: true });
+  hero.addEventListener("pointerdown", (e) => { engine?.pointer("down", ...pos(e), e.pointerType === "touch"); touched(); }, { passive: true });
+  ["pointerup", "pointercancel"].forEach((type) =>
+    hero.addEventListener(type, (e) => engine?.pointer("up", ...pos(e), e.pointerType === "touch"), { passive: true }));
+  hero.addEventListener("pointerleave", (e) => engine?.pointer("leave", ...pos(e), e.pointerType === "touch"), { passive: true });
 </script>
 </body>
 </html>
