@@ -96,6 +96,14 @@
   .food-form { grid-template-columns: 2fr repeat(4, 1fr) auto; }
   .target-form { grid-template-columns: repeat(4, 1fr) auto; }
   .public-form { grid-template-columns: 1fr auto; }
+  .ai-form { grid-template-columns: 1fr 110px auto; }
+  .ai-form input { width: 100%; }
+  .ai-note { margin: 6px 0 0; color: var(--muted); font-size: 12px; word-break: keep-all; }
+  .divider { display: flex; align-items: center; gap: 10px; margin: 18px 0 12px; color: var(--muted); font-size: 13px; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; vertical-align: 1px;
+         font-size: 11px; font-weight: 600; color: var(--rec-muted); background: var(--accent-soft); }
+  #food.highlight { outline: 2px solid var(--accent); outline-offset: 1px; }
   label.field { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
   table { width: 100%; border-collapse: collapse; font-size: 15px; }
   th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--line); }
@@ -109,6 +117,8 @@
   .info { color: var(--accent); font-size: 14px; margin-top: 8px; min-height: 18px; }
   @media (max-width: 560px) {
     .meal-form, .food-form, .target-form { grid-template-columns: 1fr 1fr; }
+    .ai-form { grid-template-columns: 1fr auto; }
+    .ai-form input { grid-column: 1 / -1; }
   }
 </style>
 </head>
@@ -137,6 +147,22 @@
 
   <section class="card">
     <h2>식사 기록 추가</h2>
+    <form id="aiForm" class="ai-form">
+      <input id="aiText" maxlength="300" required autocomplete="off"
+             placeholder="먹은 걸 그대로 적어 주세요. 예: 김치찌개 한 그릇이랑 밥 반 공기"
+             aria-label="먹은 음식 설명">
+      <select id="aiMealType" aria-label="기록할 끼니">
+        <option value="BREAKFAST">아침</option>
+        <option value="LUNCH">점심</option>
+        <option value="DINNER">저녁</option>
+        <option value="SNACK">간식</option>
+      </select>
+      <button type="submit" id="aiSubmit">AI로 기록</button>
+    </form>
+    <p class="ai-note">Google Gemini 무료 등급으로 양과 영양소를 추정해요. 입력한 문장은 Google 서비스 개선에 쓰일 수 있어요.</p>
+    <div class="info" id="aiInfo" role="status" aria-live="polite"></div>
+
+    <div class="divider">또는 음식 직접 선택</div>
     <form id="mealForm" class="meal-form">
       <select id="food" required></select>
       <select id="mealType">
@@ -409,7 +435,7 @@
     $("meals").innerHTML = meals.map((m) => `
       <tr>
         <td>${MEAL_NAMES[m.mealType]}</td>
-        <td>${esc(m.food.name)}</td>
+        <td>${esc(m.food.name)}${m.food.source === "AI" ? '<span class="tag" title="AI가 추정한 영양 정보예요">AI 추정</span>' : ""}</td>
         <td class="num">${m.grams}g</td>
         <td class="num">${Math.round(m.food.kcalPer100g * m.grams / 100)}kcal</td>
         <td class="num"><button class="del" onclick="deleteMeal(${m.id})">삭제</button></td>
@@ -461,6 +487,59 @@
     }
     $("grams").value = "";
     loadDay({ animate: true });
+  });
+
+  // AI로 기록: 문장을 서버에 보내면 서버가 Gemini로 분석해서 음식별로 저장
+  $("aiMealType").value = currentMealType();
+  $("aiForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = $("aiText").value.trim();
+    if (!text) return;
+    const button = $("aiSubmit");
+    const info = $("aiInfo");
+    const mealType = $("aiMealType").value;
+    button.disabled = true;
+    button.textContent = "분석 중…";
+    info.className = "info";
+    info.textContent = "";
+    $("food").classList.remove("highlight");
+
+    try {
+      const res = await api("/meals/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateInput.value, mealType, text }),
+      });
+
+      if (res.status === 503) {
+        // AI를 쓸 수 없음(키 없음, 무료 한도 초과 등) → 바로 아래 직접 선택으로 안내
+        info.className = "error";
+        info.textContent = await errorText(res);
+        $("mealType").value = mealType;
+        $("food").classList.add("highlight");
+        $("food").focus();
+        return;
+      }
+      if (!res.ok) {
+        info.className = "error";
+        info.textContent = await errorText(res);
+        return;
+      }
+
+      const saved = await res.json();
+      $("aiText").value = "";
+      await loadFoods();                  // AI가 새로 만든 음식도 직접 선택 목록에 나타나게
+      await loadDay({ animate: true });
+      const list = saved.map((m) => `${m.food.name} ${fmt(m.grams)}g`).join(", ");
+      info.className = "info";
+      info.textContent = `${MEAL_NAMES[mealType]}으로 ${list}을 기록했어요. 양이 다르면 기록을 지우고 직접 추가해 주세요.`;
+    } catch (err) {
+      info.className = "error";
+      info.textContent = err.message;
+    } finally {
+      button.disabled = false;
+      button.textContent = "AI로 기록";
+    }
   });
 
   // 추천을 그대로 기록 (폼이 다시 그려지므로 카드에서 이벤트를 받음)
