@@ -18,7 +18,7 @@ class GeminiNutritionAnalyzerTest {
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
   private final GeminiNutritionAnalyzer analyzer =
-      new GeminiNutritionAnalyzer("https://example.invalid", "", "test-model");
+      new GeminiNutritionAnalyzer("https://example.invalid", "", "test-model", "");
 
   private JsonNode response(String json) {
     return JSON.readTree(json);
@@ -99,14 +99,31 @@ class GeminiNutritionAnalyzerTest {
   }
 
   @Test
-  @DisplayName("Google 쪽 일시 오류(500/503/504)만 다시 시도한다")
+  @DisplayName("Google 쪽 일시 오류(500/503/504)만 같은 모델로 다시 시도한다")
   void retriesOnlyTransientErrors() {
-    assertThat(GeminiNutritionAnalyzer.isRetryable(503)).isTrue();
-    assertThat(GeminiNutritionAnalyzer.isRetryable(500)).isTrue();
-    assertThat(GeminiNutritionAnalyzer.isRetryable(504)).isTrue();
-    assertThat(GeminiNutritionAnalyzer.isRetryable(429)).isFalse();
-    assertThat(GeminiNutritionAnalyzer.isRetryable(404)).isFalse();
-    assertThat(GeminiNutritionAnalyzer.isRetryable(400)).isFalse();
+    assertThat(GeminiNutritionAnalyzer.isTransient(503)).isTrue();
+    assertThat(GeminiNutritionAnalyzer.isTransient(500)).isTrue();
+    assertThat(GeminiNutritionAnalyzer.isTransient(504)).isTrue();
+    assertThat(GeminiNutritionAnalyzer.isTransient(429)).isFalse();
+    assertThat(GeminiNutritionAnalyzer.isTransient(404)).isFalse();
+  }
+
+  @Test
+  @DisplayName("붐빔·한도 초과·모델 없음이면 다음 모델로, 키·요청 오류면 넘어가지 않는다")
+  void decidesWhenToTryNextModel() {
+    assertThat(GeminiNutritionAnalyzer.shouldTryNextModel(503)).isTrue();
+    assertThat(GeminiNutritionAnalyzer.shouldTryNextModel(429)).isTrue();
+    assertThat(GeminiNutritionAnalyzer.shouldTryNextModel(404)).isTrue();
+    assertThat(GeminiNutritionAnalyzer.shouldTryNextModel(400)).isFalse();
+    assertThat(GeminiNutritionAnalyzer.shouldTryNextModel(403)).isFalse();
+  }
+
+  @Test
+  @DisplayName("모델 순서는 기본 모델이 먼저이고 공백·빈 값·중복은 빠진다")
+  void buildsModelOrder() {
+    assertThat(GeminiNutritionAnalyzer.modelOrder(" main ", "a, ,b,main,a"))
+        .containsExactly("main", "a", "b");
+    assertThat(GeminiNutritionAnalyzer.modelOrder("main", "")).containsExactly("main");
   }
 
   @Test

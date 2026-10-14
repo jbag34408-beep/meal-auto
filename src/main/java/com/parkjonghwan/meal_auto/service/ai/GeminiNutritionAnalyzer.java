@@ -4,6 +4,8 @@ import com.parkjonghwan.meal_auto.dto.AnalyzedFood;
 import com.parkjonghwan.meal_auto.exception.AnalyzerUnavailableException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,7 +24,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 // Gemini API(무료 등급)로 식사 설명을 음식별 영양 정보로 분석
 // - 결제 계정을 연결하지 않은 키만 사용 → 비용이 발생할 수 없음
-// - 무료 한도 초과(429)는 AnalyzerUnavailableException → 사용자에게 "직접 입력" 안내(503)
+// - 기본 모델이 붐비거나(503) 한도 초과(429)·사용 불가(404)면 예비 모델로 차례대로 넘어감
+// - 모든 모델이 실패하면 AnalyzerUnavailableException → 사용자에게 "직접 입력" 안내(503)
 @Component
 public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
   private static final Logger log = LoggerFactory.getLogger(GeminiNutritionAnalyzer.class);
@@ -31,8 +34,8 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
   // 응답 최대 길이. Gemini는 내부 사고 과정(thinking) 토큰도 이 한도에 포함되므로 넉넉하게 잡음
   private static final int MAX_OUTPUT_TOKENS = 4096;
 
-  // 일시 오류 시 최대 시도 횟수(처음 1번 + 재시도 2번)와 대기 간격(1초, 2초)
-  private static final int MAX_ATTEMPTS = 3;
+  // 한 모델에서 일시 오류(500/503/504)일 때 시도 횟수(처음 1번 + 재시도 1번)와 대기 시간
+  private static final int ATTEMPTS_PER_MODEL = 2;
   private static final long RETRY_DELAY_MILLIS = 1000;
 
   // 안전 정책으로 차단된 경우: 음식을 못 찾은 것으로 처리 (서비스에서 422)
@@ -74,21 +77,34 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
 
   private final String baseUrl;
   private final String apiKey;
-  private final String model;
+  private final List<String> models;   // 앞에서부터 차례대로 시도 (첫 번째가 기본 모델)
 
   public GeminiNutritionAnalyzer(@Value("${gemini.base-url}") String baseUrl,
                                  @Value("${gemini.api-key:}") String apiKey,
-                                 @Value("${gemini.model}") String model) {
+                                 @Value("${gemini.model}") String model,
+                                 @Value("${gemini.fallback-models:}") String fallbackModels) {
     this.baseUrl = baseUrl;
     this.apiKey = apiKey.strip();   // 환경변수에 실수로 들어간 앞뒤 공백·줄바꿈 제거
-    this.model = model.strip();
+    this.models = modelOrder(model, fallbackModels);
 
     // 서버가 켜질 때 키를 읽었는지 바로 알 수 있게 남김 (키 값은 절대 찍지 않고, 있는지와 길이만)
     if (this.apiKey.isBlank()) {
       log.warn("Gemini 분석기: API 키 없음 → AI 기록은 503으로 안내됨 (환경변수 GEMINI_API_KEY 확인)");
     } else {
-      log.info("Gemini 분석기: API 키 설정됨 (길이 {}자), model={}", this.apiKey.length(), this.model);
+      log.info("Gemini 분석기: API 키 설정됨 (길이 {}자), 모델 순서={}", this.apiKey.length(), this.models);
     }
+  }
+
+  // "기본 모델" + "예비1,예비2" → [기본, 예비1, 예비2] (공백·빈 값·중복 제거)
+  static List<String> modelOrder(String model, String fallbackModels) {
+    Set<String> order = new LinkedHashSet<>();
+    order.add(model.strip());
+    Arrays.stream(fallbackModels.split(","))
+        .map(String::strip)
+        .filter(name -> !name.isEmpty())
+        .forEach(order::add);
+    order.remove("");
+    return List.copyOf(order);
   }
 
   private static SimpleClientHttpRequestFactory timeoutFactory() {
@@ -114,52 +130,74 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
             "responseJsonSchema", RESPONSE_SCHEMA,
             "maxOutputTokens", MAX_OUTPUT_TOKENS));
 
-    JsonNode root = callWithRetry(requestBody);
-    if (root == null) {
-      throw new AnalyzerUnavailableException("Gemini 응답이 비어 있어요");
+    for (String model : models) {
+      JsonNode root = callModel(model, requestBody);
+      if (root == null) {
+        continue;   // 이 모델은 지금 못 씀 → 다음 모델
+      }
+      logUsage(model, root);
+      return parseResponse(root);
     }
-
-    logUsage(root);
-    return parseResponse(root);
+    throw new AnalyzerUnavailableException("모든 Gemini 모델 호출에 실패했어요 " + models);
   }
 
-  // Gemini 호출. Google 쪽이 잠깐 붐빌 때(500/503/504)는 조금 기다렸다가 다시 시도
-  // 429(무료 한도 초과), 400(요청 오류), 403(키 오류), 404(모델 없음)는 다시 해도 같으므로 바로 실패
-  private JsonNode callWithRetry(Map<String, Object> requestBody) {
+  // 한 모델 호출. 성공하면 응답, "다음 모델로 넘어가면 되는" 실패면 null
+  // 다른 모델로 바꿔도 소용없는 실패(400 요청 오류, 403 키 오류, 연결 실패)는 바로 예외
+  private JsonNode callModel(String model, Map<String, Object> requestBody) {
     for (int attempt = 1; ; attempt++) {
       try {
-        return restClient.post()
+        JsonNode root = restClient.post()
             .uri(baseUrl + "/" + model + ":generateContent")
             .header("x-goog-api-key", apiKey)
             .contentType(MediaType.APPLICATION_JSON)
             .body(requestBody)
             .retrieve()
             .body(JsonNode.class);
+        if (root == null) {
+          throw new AnalyzerUnavailableException("Gemini 응답이 비어 있어요");
+        }
+        return root;
       } catch (RestClientResponseException e) {
         int status = e.getStatusCode().value();
-        if (isRetryable(status) && attempt < MAX_ATTEMPTS) {
-          log.info("Gemini 일시 오류 {} → {}번째 재시도", status, attempt);
-          sleep(RETRY_DELAY_MILLIS * attempt);
+        if (isTransient(status) && attempt < ATTEMPTS_PER_MODEL) {
+          log.info("Gemini {} 일시 오류 {} → 잠시 후 다시 시도", model, status);
+          sleep(RETRY_DELAY_MILLIS);
           continue;
         }
-        // 원인 파악을 위해 응답 본문까지 로그에 남기고, 사용자에게는 일반 안내만 보냄
-        if (status == 429) {
-          log.warn("Gemini 무료 한도 초과(429)");
-        } else {
-          log.warn("Gemini API 오류 {} ({}번 시도): {}", e.getStatusCode(), attempt,
-              e.getResponseBodyAsString());
+        if (shouldTryNextModel(status)) {
+          log.warn("Gemini {} 사용 불가 {} → 다음 모델로 넘어감: {}", model, status,
+              errorMessage(e));
+          return null;
         }
+        // 원인 파악을 위해 응답 본문까지 로그에 남기고, 사용자에게는 일반 안내만 보냄
+        log.warn("Gemini API 오류 {} (model={}): {}", status, model, e.getResponseBodyAsString());
         throw new AnalyzerUnavailableException("Gemini API 호출에 실패했어요", e);
       } catch (RestClientException e) {
-        // 시간 초과, 연결 실패 등 (30초 대기 후 실패이므로 다시 시도하지 않음)
-        log.warn("Gemini API 연결 실패: {}", e.getMessage());
+        // 시간 초과, 연결 실패 등 (이미 30초를 기다린 뒤라 다른 모델까지 시도하지 않음)
+        log.warn("Gemini API 연결 실패 (model={}): {}", model, e.getMessage());
         throw new AnalyzerUnavailableException("Gemini API에 연결하지 못했어요", e);
       }
     }
   }
 
-  static boolean isRetryable(int status) {
+  // Google 서버 쪽 일시 오류 → 같은 모델로 한 번 더 시도할 가치가 있음
+  static boolean isTransient(int status) {
     return status == 500 || status == 503 || status == 504;
+  }
+
+  // 이 모델만의 문제 → 다른 모델은 될 수 있음
+  // 429: 무료 한도는 모델마다 따로, 404: 모델 이름이 없거나 신규 사용자에게 막힘
+  static boolean shouldTryNextModel(int status) {
+    return isTransient(status) || status == 429 || status == 404;
+  }
+
+  // 로그가 너무 길어지지 않게 Google 오류 본문에서 message만 꺼냄
+  private static String errorMessage(RestClientResponseException e) {
+    try {
+      return JSON.readTree(e.getResponseBodyAsString()).path("error").path("message").asString();
+    } catch (JacksonException ignored) {
+      return e.getResponseBodyAsString();
+    }
   }
 
   private static void sleep(long millis) {
@@ -225,8 +263,8 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
     return foods;
   }
 
-  // 요청마다 토큰 사용량을 로그로 남김 (무료 한도 소진 속도 확인용)
-  private void logUsage(JsonNode root) {
+  // 요청마다 토큰 사용량을 로그로 남김 (무료 한도 소진 속도, 실제로 쓰인 모델 확인용)
+  private void logUsage(String model, JsonNode root) {
     JsonNode usage = root.path("usageMetadata");
     if (!usage.isMissingNode()) {
       log.info("Gemini 사용량 - model={}, 입력 토큰={}, 출력 토큰={}",
