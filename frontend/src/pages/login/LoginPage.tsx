@@ -17,7 +17,7 @@ function loadTheme(): AuraTheme {
   }
 }
 
-// 로그인·회원가입 화면: 배경·모서리 글씨·카드 배치는 여기서, 서버 요청도 여기서
+// 로그인·회원가입 화면: 배경·테마 버튼·카드 배치는 여기서, 서버 요청도 여기서
 export default function LoginPage() {
   const [theme, setTheme] = useState<AuraTheme>(loadTheme)
   const [mode, setMode] = useState<AuthMode>("login")
@@ -50,18 +50,7 @@ export default function LoginPage() {
     <main className="aura" data-theme={theme}>
       <AuraBackdrop theme={theme} />
 
-      <p className="aura-meta aura-meta-tl" aria-hidden>
-        SYS.CORE // ON-LINE
-      </p>
-      <p className="aura-meta aura-meta-bl" aria-hidden>
-        UPLINK_ESTABLISHED<span className="aura-cursor">_</span>
-      </p>
-      <p className="aura-vertical" aria-hidden>
-        {"[   TELE   =   PROMPT   -3R   ]"}
-      </p>
-
       <div className="aura-topbar">
-        <span className="aura-version">V03.01</span>
         <button
           type="button"
           className="aura-theme"
