@@ -31,6 +31,10 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
   // 응답 최대 길이. Gemini는 내부 사고 과정(thinking) 토큰도 이 한도에 포함되므로 넉넉하게 잡음
   private static final int MAX_OUTPUT_TOKENS = 4096;
 
+  // 일시 오류 시 최대 시도 횟수(처음 1번 + 재시도 2번)와 대기 간격(1초, 2초)
+  private static final int MAX_ATTEMPTS = 3;
+  private static final long RETRY_DELAY_MILLIS = 1000;
+
   // 안전 정책으로 차단된 경우: 음식을 못 찾은 것으로 처리 (서비스에서 422)
   private static final Set<String> BLOCKED_FINISH_REASONS =
       Set.of("SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII");
@@ -110,35 +114,61 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
             "responseJsonSchema", RESPONSE_SCHEMA,
             "maxOutputTokens", MAX_OUTPUT_TOKENS));
 
-    JsonNode root;
-    try {
-      root = restClient.post()
-          .uri(baseUrl + "/" + model + ":generateContent")
-          .header("x-goog-api-key", apiKey)
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(requestBody)
-          .retrieve()
-          .body(JsonNode.class);
-    } catch (RestClientResponseException e) {
-      // 429(무료 한도 초과), 400(요청 형식 오류), 403(키 오류) 등
-      // 원인 파악을 위해 응답 본문까지 로그에 남기고, 사용자에게는 일반 안내만 보냄
-      if (e.getStatusCode().value() == 429) {
-        log.warn("Gemini 무료 한도 초과(429)");
-      } else {
-        log.warn("Gemini API 오류 {}: {}", e.getStatusCode(), e.getResponseBodyAsString());
-      }
-      throw new AnalyzerUnavailableException("Gemini API 호출에 실패했어요", e);
-    } catch (RestClientException e) {
-      // 시간 초과, 연결 실패 등
-      log.warn("Gemini API 연결 실패: {}", e.getMessage());
-      throw new AnalyzerUnavailableException("Gemini API에 연결하지 못했어요", e);
-    }
+    JsonNode root = callWithRetry(requestBody);
     if (root == null) {
       throw new AnalyzerUnavailableException("Gemini 응답이 비어 있어요");
     }
 
     logUsage(root);
     return parseResponse(root);
+  }
+
+  // Gemini 호출. Google 쪽이 잠깐 붐빌 때(500/503/504)는 조금 기다렸다가 다시 시도
+  // 429(무료 한도 초과), 400(요청 오류), 403(키 오류), 404(모델 없음)는 다시 해도 같으므로 바로 실패
+  private JsonNode callWithRetry(Map<String, Object> requestBody) {
+    for (int attempt = 1; ; attempt++) {
+      try {
+        return restClient.post()
+            .uri(baseUrl + "/" + model + ":generateContent")
+            .header("x-goog-api-key", apiKey)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(requestBody)
+            .retrieve()
+            .body(JsonNode.class);
+      } catch (RestClientResponseException e) {
+        int status = e.getStatusCode().value();
+        if (isRetryable(status) && attempt < MAX_ATTEMPTS) {
+          log.info("Gemini 일시 오류 {} → {}번째 재시도", status, attempt);
+          sleep(RETRY_DELAY_MILLIS * attempt);
+          continue;
+        }
+        // 원인 파악을 위해 응답 본문까지 로그에 남기고, 사용자에게는 일반 안내만 보냄
+        if (status == 429) {
+          log.warn("Gemini 무료 한도 초과(429)");
+        } else {
+          log.warn("Gemini API 오류 {} ({}번 시도): {}", e.getStatusCode(), attempt,
+              e.getResponseBodyAsString());
+        }
+        throw new AnalyzerUnavailableException("Gemini API 호출에 실패했어요", e);
+      } catch (RestClientException e) {
+        // 시간 초과, 연결 실패 등 (30초 대기 후 실패이므로 다시 시도하지 않음)
+        log.warn("Gemini API 연결 실패: {}", e.getMessage());
+        throw new AnalyzerUnavailableException("Gemini API에 연결하지 못했어요", e);
+      }
+    }
+  }
+
+  static boolean isRetryable(int status) {
+    return status == 500 || status == 503 || status == 504;
+  }
+
+  private static void sleep(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new AnalyzerUnavailableException("Gemini 재시도 중 중단됐어요", e);
+    }
   }
 
   // Gemini 응답 JSON → 음식 목록 (네트워크와 분리해서 테스트할 수 있게 패키지 공개로 둠)

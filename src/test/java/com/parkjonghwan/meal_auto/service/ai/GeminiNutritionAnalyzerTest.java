@@ -99,6 +99,17 @@ class GeminiNutritionAnalyzerTest {
   }
 
   @Test
+  @DisplayName("Google 쪽 일시 오류(500/503/504)만 다시 시도한다")
+  void retriesOnlyTransientErrors() {
+    assertThat(GeminiNutritionAnalyzer.isRetryable(503)).isTrue();
+    assertThat(GeminiNutritionAnalyzer.isRetryable(500)).isTrue();
+    assertThat(GeminiNutritionAnalyzer.isRetryable(504)).isTrue();
+    assertThat(GeminiNutritionAnalyzer.isRetryable(429)).isFalse();
+    assertThat(GeminiNutritionAnalyzer.isRetryable(404)).isFalse();
+    assertThat(GeminiNutritionAnalyzer.isRetryable(400)).isFalse();
+  }
+
+  @Test
   @DisplayName("API 키가 없으면 Gemini를 부르지 않고 바로 사용 불가로 처리한다")
   void missingKeyIsUnavailable() {
     assertThatThrownBy(() -> analyzer.analyze("김치찌개 한 그릇"))
