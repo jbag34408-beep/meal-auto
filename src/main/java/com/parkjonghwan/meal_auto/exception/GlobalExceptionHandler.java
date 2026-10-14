@@ -39,7 +39,8 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body(ErrorResponse.of(404, e.getMessage()));
   }
-    // 같은 이름 음식 → 409 Conflict (이미 있는 것과 충돌)
+
+  // 같은 이름 음식 → 409 Conflict (이미 있는 것과 충돌)
   @ExceptionHandler(DuplicateFoodException.class)
   public ResponseEntity<ErrorResponse> handleDuplicateFood(DuplicateFoodException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -52,16 +53,34 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest()
         .body(ErrorResponse.of(400, e.getMessage()));
   }
-    // 외부 API 실패 → 502 Bad Gateway (중간 서버가 외부 서버로부터 제대로 된 응답을 못 받음)
+
+  // 외부 API 실패 → 502 Bad Gateway (중간 서버가 외부 서버로부터 제대로 된 응답을 못 받음)
   @ExceptionHandler(ExternalApiException.class)
   public ResponseEntity<ErrorResponse> handleExternalApi(ExternalApiException e) {
     return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
         .body(ErrorResponse.of(502, e.getMessage()));
   }
-    // 아이디 중복 → 409
+
+  // 아이디 중복 → 409
   @ExceptionHandler(DuplicateMemberException.class)
   public ResponseEntity<ErrorResponse> handleDuplicateMember(DuplicateMemberException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(ErrorResponse.of(409, e.getMessage()));
+  }
+
+  // AI 분석 사용 불가 (키 없음, 무료 한도 초과, AI 장애) → 503 Service Unavailable
+  // 예외 메시지에는 "키가 잘못됨" 같은 내부 사정이 담길 수 있어 사용자에게는 고정 안내만 보냄
+  // 화면에서는 이 응답을 받으면 "음식 직접 선택" 흐름으로 넘기면 됨
+  @ExceptionHandler(AnalyzerUnavailableException.class)
+  public ResponseEntity<ErrorResponse> handleAnalyzerUnavailable(AnalyzerUnavailableException e) {
+    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+        .body(ErrorResponse.of(503, "지금은 AI 분석을 쓸 수 없어요. 음식을 직접 골라 기록해 주세요."));
+  }
+
+  // 입력은 정상인데 음식을 하나도 알아보지 못함 → 422 Unprocessable Entity
+  @ExceptionHandler(NoFoodRecognizedException.class)
+  public ResponseEntity<ErrorResponse> handleNoFoodRecognized(NoFoodRecognizedException e) {
+    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+        .body(ErrorResponse.of(422, "음식을 알아보지 못했어요. 음식 이름과 양을 조금 더 구체적으로 적어 주세요."));
   }
 }
