@@ -76,8 +76,15 @@ public class GeminiNutritionAnalyzer implements NutritionAnalyzer {
                                  @Value("${gemini.api-key:}") String apiKey,
                                  @Value("${gemini.model}") String model) {
     this.baseUrl = baseUrl;
-    this.apiKey = apiKey;
-    this.model = model;
+    this.apiKey = apiKey.strip();   // 환경변수에 실수로 들어간 앞뒤 공백·줄바꿈 제거
+    this.model = model.strip();
+
+    // 서버가 켜질 때 키를 읽었는지 바로 알 수 있게 남김 (키 값은 절대 찍지 않고, 있는지와 길이만)
+    if (this.apiKey.isBlank()) {
+      log.warn("Gemini 분석기: API 키 없음 → AI 기록은 503으로 안내됨 (환경변수 GEMINI_API_KEY 확인)");
+    } else {
+      log.info("Gemini 분석기: API 키 설정됨 (길이 {}자), model={}", this.apiKey.length(), this.model);
+    }
   }
 
   private static SimpleClientHttpRequestFactory timeoutFactory() {

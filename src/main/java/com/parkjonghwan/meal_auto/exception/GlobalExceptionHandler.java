@@ -2,6 +2,8 @@ package com.parkjonghwan.meal_auto.exception;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 // 모든 컨트롤러에서 던져진 예외를 여기서 한 번에 받아 응답으로 바꿈
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
   // @Valid 검증 실패 → 400
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -73,6 +76,8 @@ public class GlobalExceptionHandler {
   // 화면에서는 이 응답을 받으면 "음식 직접 선택" 흐름으로 넘기면 됨
   @ExceptionHandler(AnalyzerUnavailableException.class)
   public ResponseEntity<ErrorResponse> handleAnalyzerUnavailable(AnalyzerUnavailableException e) {
+    // 사용자에게는 숨긴 진짜 원인을 서버 로그에는 남김 (원인 파악용)
+    log.warn("AI 분석 사용 불가(503): {}", e.getMessage());
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
         .body(ErrorResponse.of(503, "지금은 AI 분석을 쓸 수 없어요. 음식을 직접 골라 기록해 주세요."));
   }
