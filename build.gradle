@@ -32,3 +32,9 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// 로컬 실행(./gradlew bootRun) 때 static 파일(HTML·JS)을 src에서 바로 읽음
+// → 화면 파일을 고치고 브라우저 새로고침만 하면 반영 (서버 재시작 불필요, 배포에는 영향 없음)
+tasks.named('bootRun') {
+	sourceResources sourceSets.main
+}
