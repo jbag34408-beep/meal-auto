@@ -4,6 +4,7 @@ import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.dto.DailySummary;
 import com.parkjonghwan.meal_auto.dto.Recommendation;
 import com.parkjonghwan.meal_auto.repository.MemberRepository;
+import com.parkjonghwan.meal_auto.service.DailyReportService;
 import com.parkjonghwan.meal_auto.service.MealRecommendService;
 import com.parkjonghwan.meal_auto.service.MealSummaryService;
 import java.time.LocalDate;
@@ -19,13 +20,16 @@ public class DailyMealScheduler {
 
   private final MealSummaryService summaryService;
   private final MealRecommendService recommendService;
+  private final DailyReportService reportService;
   private final MemberRepository memberRepository;
 
   public DailyMealScheduler(MealSummaryService summaryService,
                             MealRecommendService recommendService,
+                            DailyReportService reportService,
                             MemberRepository memberRepository) {
     this.summaryService = summaryService;
     this.recommendService = recommendService;
+    this.reportService = reportService;
     this.memberRepository = memberRepository;
   }
 
@@ -49,6 +53,8 @@ public class DailyMealScheduler {
             recommendation.getFood().getName(), recommendation.getGrams(),
             recommendation.getReason());
       }
+
+      reportService.generateAndSave(member, today, summary, recommendation);
     }
   }
 }
