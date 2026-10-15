@@ -1,37 +1,19 @@
-import { useEffect, useState } from "react"
-import { Moon, Sun } from "lucide-react"
+import { useState } from "react"
 import { AuraBackdrop } from "@/components/aura/aura-backdrop"
 import { AuthCard, type AuthMode } from "@/components/aura/auth-card"
-import type { AuraTheme } from "@/components/aura/chrome-blob"
+import { ThemeToggle } from "@/components/aura/theme-toggle"
+import { useAuraTheme } from "@/components/aura/use-aura-theme"
 import { login, signup } from "@/lib/api"
 import "@/components/aura/aura.css"
 
 const DEMO = { username: "demo", password: "demo1234" }
-const THEME_KEY = "aura-theme"
-
-function loadTheme(): AuraTheme {
-  try {
-    return localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light"
-  } catch {
-    return "light"
-  }
-}
 
 // 로그인·회원가입 화면: 배경·테마 버튼·카드 배치는 여기서, 서버 요청도 여기서
 export default function LoginPage() {
-  const [theme, setTheme] = useState<AuraTheme>(loadTheme)
+  const [theme, setTheme] = useAuraTheme()
   const [mode, setMode] = useState<AuthMode>("login")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(THEME_KEY, theme)
-    } catch {
-      // 저장소를 못 써도 화면 전환은 그대로 동작
-    }
-    document.documentElement.style.background = theme === "dark" ? "#0c0d0f" : "#eef1f5"
-  }, [theme])
 
   // 로그인에 성공하면 오늘 화면으로 이동
   async function run(task: () => Promise<void>) {
@@ -51,19 +33,7 @@ export default function LoginPage() {
       <AuraBackdrop theme={theme} />
 
       <div className="aura-topbar">
-        <button
-          type="button"
-          className="aura-theme"
-          aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
-          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-        >
-          {theme === "light" ? (
-            <Sun width={14} height={14} strokeWidth={2} aria-hidden />
-          ) : (
-            <Moon width={14} height={14} strokeWidth={2} aria-hidden />
-          )}
-          {theme === "light" ? "LIGHT" : "DARK"}
-        </button>
+        <ThemeToggle theme={theme} onChange={setTheme} />
       </div>
 
       <div className="aura-stage">
