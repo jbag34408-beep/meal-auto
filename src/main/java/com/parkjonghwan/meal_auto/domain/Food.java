@@ -27,6 +27,9 @@ public class Food {
   @Enumerated(EnumType.STRING)
   private FoodSource source;
 
+  // 1인분(g): 기본 음식에만 있음 (추천할 때 최대 2인분까지만 권함, 비어 있으면 제한 없음)
+  private Double servingGrams;
+
   // 주인: 비어 있으면 모두가 쓰는 공용 음식(기본 음식·공공데이터),
   // 있으면 그 회원만 보고 쓰는 개인 음식(직접 등록·AI 추정)
   // 화면에는 회원 정보를 내보내지 않음 (대신 shared 값으로 공용 여부만 알려 줌)
@@ -67,11 +70,19 @@ public class Food {
     return source != null ? source : FoodSource.SEED;
   }
 
+  public Double getServingGrams() { return servingGrams; }
+
   @JsonIgnore
   public Member getOwner() { return owner; }
 
   // JSON에는 "shared": true/false 로 나감
   public boolean isShared() { return owner == null; }
+
+  // 기본 음식의 1인분 양 지정 (DataInitializer)
+  public Food withServingGrams(Double servingGrams) {
+    this.servingGrams = servingGrams;
+    return this;
+  }
 
   // 주인 기능 이전에 만들어진 음식을 실제 주인에게 넘길 때만 사용 (DataInitializer)
   public void assignOwner(Member owner, FoodSource source) {

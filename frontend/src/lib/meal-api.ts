@@ -29,6 +29,7 @@ export type Food = {
   fat: number
   source?: "SEED" | "PUBLIC" | "USER" | "AI" | string
   shared?: boolean // true: 모두가 쓰는 공용 음식, false: 내 개인 음식
+  servingGrams?: number | null // 1인분(g), 기본 음식에만 있음
 }
 
 export type MealEntry = { id: number; date: string; mealType: MealType; food: Food; grams: number }
@@ -156,6 +157,10 @@ export const createFood = async (food: FoodInput): Promise<Food> => (await reque
 // 공공데이터 가져오기 → 공용 음식 (영양 값은 서버가 식약처 DB를 다시 조회해서 채움)
 export const importPublicFood = async (food: Pick<PublicFood, "name" | "maker">): Promise<Food> =>
   (await request("/foods/public", json({ name: food.name, maker: food.maker ?? "" }))).json()
+
+// 공공데이터 API 키가 서버에 설정됐는지 (없으면 검색·가져오기를 쓸 수 없음)
+export const getPublicFoodStatus = async (): Promise<{ available: boolean }> =>
+  (await request("/foods/public/status")).json()
 
 export const searchPublicFoods = async (keyword: string): Promise<PublicFood[]> =>
   (await request(`/foods/public?keyword=${encodeURIComponent(keyword)}`)).json()

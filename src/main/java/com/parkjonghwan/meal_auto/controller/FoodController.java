@@ -10,6 +10,7 @@ import com.parkjonghwan.meal_auto.service.PublicFoodClient;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,6 +39,12 @@ public class FoodController {
   @ResponseStatus(HttpStatus.CREATED)
   public Food create(Principal principal, @Valid @RequestBody FoodRequest request) {
     return foodService.create(memberService.get(principal.getName()), request);
+  }
+
+  // GET /foods/public/status → {"available": true/false} (공공데이터 API 키가 설정됐는지)
+  @GetMapping("/public/status")
+  public Map<String, Boolean> publicStatus() {
+    return Map.of("available", publicFoodClient.isConfigured());
   }
 
   // GET /foods/public?keyword=사과 → 식약처 DB 검색 (저장은 안 함)

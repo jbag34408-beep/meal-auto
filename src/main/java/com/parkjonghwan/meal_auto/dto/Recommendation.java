@@ -13,7 +13,7 @@ public class Recommendation {
   private double neededGrams;           // 부족분을 다 채우는 양 (칼로리 상한 적용 전)
   private double kcal;                  // 추천량의 칼로리
   private double remainingKcal;         // 오늘 남은 칼로리
-  private boolean capped;               // 한 끼 양(500g·한 끼 칼로리·남은 칼로리)에 맞춰 줄였는지
+  private boolean capped;               // 한 끼 양(500g·2인분·한 끼 칼로리·남은 칼로리)에 맞춰 줄였는지
   private List<Shortfall> shortfalls;   // 탄수화물·단백질·지방 각각의 부족 정도
   private List<RecommendationOption> options;   // 점수 순 후보 (최대 3개, 첫 번째가 위 food)
 

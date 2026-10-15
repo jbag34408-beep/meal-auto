@@ -2,6 +2,7 @@ package com.parkjonghwan.meal_auto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.parkjonghwan.meal_auto.config.SeedFoodCatalog;
 import com.parkjonghwan.meal_auto.domain.Food;
 import com.parkjonghwan.meal_auto.domain.FoodSource;
 import com.parkjonghwan.meal_auto.domain.MealEntry;
@@ -65,5 +66,32 @@ class DataInitializerTest {
     assertThat(foodRepository.findVisibleTo(b)).extracting(Food::getName)
         .contains("예전김밥", "쌀밥")
         .doesNotContain("예전떡볶이", "예전AI음식");
+  }
+
+  @Test
+  @DisplayName("기본 음식 목록이 모두 공용 음식으로 들어가고, 다시 실행해도 늘어나지 않는다")
+  void seedsCatalogOnce() {
+    long before = foodRepository.count();
+    assertThat(foodRepository.findByOwnerIsNull()).extracting(Food::getName)
+        .containsAll(SeedFoodCatalog.names());
+
+    dataInitializer.run();
+
+    assertThat(foodRepository.count()).isEqualTo(before);
+    Food honey = foodRepository.findFirstByOwnerIsNullAndNameIgnoreCase("꿀").orElseThrow();
+    assertThat(honey.getServingGrams()).isEqualTo(20.0);
+    assertThat(honey.getSource()).isEqualTo(FoodSource.SEED);
+  }
+
+  @Test
+  @DisplayName("예전에 들어간 기본 음식은 영양 값을 그대로 두고 1인분 양만 채운다")
+  void fillsServingForExistingSeedWithoutChangingValues() {
+    Food rice = foodRepository.findFirstByOwnerIsNullAndNameIgnoreCase("쌀밥").orElseThrow();
+    rice.withServingGrams(null);   // 1인분 기능 이전 상태
+
+    dataInitializer.run();
+
+    assertThat(rice.getServingGrams()).isEqualTo(210.0);
+    assertThat(rice.getKcalPer100g()).isEqualTo(200.0);
   }
 }

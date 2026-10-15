@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 // 다음 끼니 추천
 // 1) 목표 대비 가장 부족한 영양소를 찾고
 // 2) 후보 음식마다 "그 부족분을 채우는 양"을 먹었을 때의 점수를 매겨
-//    (양은 한 끼에 알맞게: 최대 500g, 하루 목표 칼로리의 40%, 남은 칼로리 중 작은 값까지)
+//    (양은 한 끼에 알맞게: 최대 500g, 1인분이 정해진 음식은 2인분, 하루 목표 칼로리의 40%, 남은 칼로리 중 작은 값까지)
 // 3) 점수 순으로 최대 3개를 돌려줌 (첫 번째가 대표 추천)
 //
 // 점수 = 채운 정도 - 초과한 정도 - 칼로리 부담 - 최근에 먹은 음식
@@ -39,6 +39,7 @@ public class MealRecommendService {
   static final double MIN_LACK = 1.0;        // 1g 미만 부족은 채울 필요 없음으로 봄
   static final double MAX_PORTION_GRAMS = 500;   // 한 끼에 먹을 수 있는 양
   static final double MEAL_KCAL_SHARE = 0.4;     // 한 끼 칼로리 상한 = 하루 목표의 40%
+  static final double MAX_SERVINGS = 2;          // 1인분이 정해진 음식은 최대 2인분 (꿀·기름이 수백 g 추천되지 않게)
 
   private static final String[] NUTRIENTS = {"탄수화물", "단백질", "지방"};
 
@@ -124,6 +125,9 @@ public class MealRecommendService {
     double grams = lack[primary] / per100[primary] * 100;
     double neededGrams = Math.round(grams);
     double maxGrams = MAX_PORTION_GRAMS;
+    if (food.getServingGrams() != null && food.getServingGrams() > 0) {
+      maxGrams = Math.min(maxGrams, food.getServingGrams() * MAX_SERVINGS);
+    }
     if (food.getKcalPer100g() > 0) {
       maxGrams = Math.min(maxGrams, mealKcal / food.getKcalPer100g() * 100);
     }

@@ -1,6 +1,6 @@
-import { useState, type FormEvent, type ReactNode } from "react"
+import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import { ChevronDown } from "lucide-react"
-import { createFood, fmt, importPublicFood, saveTargets, searchPublicFoods, type Me, type PublicFood } from "@/lib/meal-api"
+import { createFood, fmt, getPublicFoodStatus, importPublicFood, saveTargets, searchPublicFoods, type Me, type PublicFood } from "@/lib/meal-api"
 import { Card } from "./parts"
 
 type Props = {
@@ -47,6 +47,14 @@ export function ManageCard({ me, onTargetsSaved, onFoodsChanged }: Props) {
   const [searching, setSearching] = useState(false)
   const [imported, setImported] = useState<Set<number>>(new Set())
   const [foodMsg, setFoodMsg] = useState({ error: "", ok: "" })
+  const [publicAvailable, setPublicAvailable] = useState<boolean | null>(null)
+
+  // 공공데이터 API 키가 없는 서버면 검색 대신 안내를 보여 줌
+  useEffect(() => {
+    getPublicFoodStatus()
+      .then((s) => setPublicAvailable(s.available))
+      .catch(() => setPublicAvailable(false))
+  }, [])
 
   async function handleTargets(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -148,44 +156,53 @@ export function ManageCard({ me, onTargetsSaved, onFoodsChanged }: Props) {
 
         <Accordion
           title="공공 데이터에서 음식 찾기"
-          meta="식약처 DB"
+          meta={publicAvailable === false ? "지금은 사용할 수 없어요" : "식약처 DB"}
           open={open === "public"}
           onToggle={() => toggle("public")}
         >
-          <form className="meal-search" onSubmit={handleSearch}>
-            <input name="keyword" className="aura-input" placeholder="예: 사과, 김치찌개" required aria-label="찾을 음식 이름" />
-            <button type="submit" className="meal-pill-btn is-dark" disabled={searching}>
-              {searching ? "찾는 중" : "검색"}
-            </button>
-          </form>
-          <FormMessage error={publicError} ok="" />
-          {results && (
-            results.length === 0 ? (
-              <p className="meal-empty">검색 결과가 없어요. 다른 이름으로 찾아보세요.</p>
-            ) : (
-              <ul className="meal-results">
-                {results.map((f, i) => (
-                  <li key={`${f.name}-${i}`}>
-                    <div className="meal-result-text">
-                      <b>{f.name}</b>
-                      <span>
-                        {[f.maker, f.basis && `${f.basis} 기준`].filter(Boolean).join(" · ")}
-                        {(f.maker || f.basis) && " · "}
-                        {fmt(f.kcal)} kcal · 탄 {fmt(f.carbohydrate)} · 단 {fmt(f.protein)} · 지 {fmt(f.fat)}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className="meal-pill-btn is-small"
-                      disabled={imported.has(i)}
-                      onClick={() => importFood(f, i)}
-                    >
-                      {imported.has(i) ? "가져옴" : "가져오기"}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )
+          {publicAvailable === false ? (
+            <p className="meal-empty is-left">
+              서버에 공공데이터 API 키가 없어서 지금은 식약처 DB를 검색할 수 없어요. 자주 먹는 기본 음식 60여 가지는
+              이미 들어 있으니 "직접 입력하기"에서 골라 보세요. 없는 음식은 아래 "내 음식 등록"으로 추가할 수 있어요.
+            </p>
+          ) : (
+            <>
+              <form className="meal-search" onSubmit={handleSearch}>
+                <input name="keyword" className="aura-input" placeholder="예: 사과, 김치찌개" required aria-label="찾을 음식 이름" />
+                <button type="submit" className="meal-pill-btn is-dark" disabled={searching}>
+                  {searching ? "찾는 중" : "검색"}
+                </button>
+              </form>
+              <FormMessage error={publicError} ok="" />
+              {results && (
+                results.length === 0 ? (
+                  <p className="meal-empty">검색 결과가 없어요. 다른 이름으로 찾아보세요.</p>
+                ) : (
+                  <ul className="meal-results">
+                    {results.map((f, i) => (
+                      <li key={`${f.name}-${i}`}>
+                        <div className="meal-result-text">
+                          <b>{f.name}</b>
+                          <span>
+                            {[f.maker, f.basis && `${f.basis} 기준`].filter(Boolean).join(" · ")}
+                            {(f.maker || f.basis) && " · "}
+                            {fmt(f.kcal)} kcal · 탄 {fmt(f.carbohydrate)} · 단 {fmt(f.protein)} · 지 {fmt(f.fat)}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="meal-pill-btn is-small"
+                          disabled={imported.has(i)}
+                          onClick={() => importFood(f, i)}
+                        >
+                          {imported.has(i) ? "가져옴" : "가져오기"}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              )}
+            </>
           )}
         </Accordion>
 

@@ -222,4 +222,20 @@ class MealRecommendServiceTest {
     assertEquals(400.0, riceOption.grams(), 0.001);   // 800kcal ÷ 200kcal × 100
     assertTrue(riceOption.capped());
   }
+
+  @Test
+  void 일인분이_정해진_음식은_최대_2인분까지만_추천한다() {
+    // 탄수화물만 크게 부족: 꿀로 채우려면 수백 g이 필요하지만 1인분 20g × 2 = 40g까지만
+    DailySummary summary = new DailySummary(today, 1, 300.0, 50.0, 60.0, 50.0);
+    Food honey = new Food("꿀", 304, 82.4, 0.3, 0).withServingGrams(20.0);
+    Mockito.when(foodRepository.findVisibleTo(member)).thenReturn(List.of(rice, honey));
+
+    Recommendation result = recommendService.recommend(summary, member);
+
+    RecommendationOption honeyOption = result.getOptions().stream()
+        .filter(o -> o.food() == honey).findFirst().orElseThrow();
+    assertEquals(40.0, honeyOption.grams(), 0.001);
+    assertTrue(honeyOption.capped());
+    assertEquals("쌀밥", result.getFood().getName());   // 한 끼 양으로 더 많이 채우는 쌀밥이 1위
+  }
 }

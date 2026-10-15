@@ -9,7 +9,7 @@ public record RecommendationOption(
     Food food,
     double grams,
     double kcal,
-    boolean capped,                 // 한 끼 양(500g·한 끼 칼로리·남은 칼로리)에 맞춰 줄였는지
+    boolean capped,                 // 한 끼 양(500g·2인분·한 끼 칼로리·남은 칼로리)에 맞춰 줄였는지
     boolean recent,                 // 최근 3일 안에 먹은 음식인지
     List<NutrientEffect> effects,   // 탄수화물·단백질·지방 순서
     double score,

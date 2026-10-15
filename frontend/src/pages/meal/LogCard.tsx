@@ -138,7 +138,7 @@ export function LogCard({ date, foods, onSaved, onFoodsChanged }: Props) {
             >
               {foods.map((f) => (
                 <option key={f.id} value={f.id}>
-                  {f.name} (100g당 {fmt(f.kcalPer100g)}kcal){f.shared === false && " · 내 음식"}
+                  {f.name} (100g당 {fmt(f.kcalPer100g)}kcal{f.servingGrams ? ` · 1인분 ${fmt(f.servingGrams)}g` : ""}){f.shared === false && " · 내 음식"}
                 </option>
               ))}
             </select>

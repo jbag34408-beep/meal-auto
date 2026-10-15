@@ -1,5 +1,7 @@
 package com.parkjonghwan.meal_auto;
 
+import com.parkjonghwan.meal_auto.config.SeedFoodCatalog;
+import com.parkjonghwan.meal_auto.config.SeedFoodCatalog.SeedFood;
 import com.parkjonghwan.meal_auto.domain.Food;
 import com.parkjonghwan.meal_auto.domain.FoodSource;
 import com.parkjonghwan.meal_auto.domain.MealEntry;
@@ -26,7 +28,7 @@ public class DataInitializer implements CommandLineRunner {
   private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
   // 공용 기본 음식 이름 (주인 정리 때 이 음식들은 공용으로 남김)
-  private static final Set<String> SEED_NAMES = Set.of("쌀밥", "닭가슴살", "바나나", "아몬드", "계란");
+  private static final Set<String> SEED_NAMES = SeedFoodCatalog.names();
 
   private final FoodRepository foodRepository;
   private final MealEntryRepository mealEntryRepository;
@@ -49,14 +51,8 @@ public class DataInitializer implements CommandLineRunner {
   @Override
   @Transactional
   public void run(String... args) {
-    // 1) 공용 기본 음식 (처음 한 번만)
-    if (foodRepository.count() == 0) {
-      foodRepository.save(new Food("쌀밥", 200, 45, 4, 0.5));
-      foodRepository.save(new Food("닭가슴살", 110, 0, 23, 1));
-      foodRepository.save(new Food("바나나", 90, 23, 1, 0.3));
-      foodRepository.save(new Food("아몬드", 579, 22, 21, 50));
-      foodRepository.save(new Food("계란", 155, 1.1, 13, 11));
-    }
+    // 1) 공용 기본 음식: 목록(seed/foods.csv) 중 DB에 없는 것만 추가 (배포된 DB에도 새 음식이 들어감)
+    addMissingSeedFoods();
 
     // 2) 데모 회원과 샘플 기록 (처음 한 번만)
     if (!memberRepository.existsByUsername("demo")) {
@@ -65,6 +61,26 @@ public class DataInitializer implements CommandLineRunner {
 
     // 3) 주인 기능 이전에 만들어진 음식의 주인 찾기 (매번 실행해도 결과는 같음)
     assignLegacyFoodOwners();
+  }
+
+  // 이미 있는 음식의 영양 값은 그대로 두고, 1인분 양이 비어 있으면 채움
+  private void addMissingSeedFoods() {
+    int added = 0;
+    for (SeedFood seed : SeedFoodCatalog.foods()) {
+      var existing = foodRepository.findFirstByOwnerIsNullAndNameIgnoreCase(seed.name());
+      if (existing.isPresent()) {
+        if (existing.get().getServingGrams() == null) {
+          existing.get().withServingGrams(seed.servingGrams());   // 변경 감지로 자동 저장
+        }
+        continue;
+      }
+      foodRepository.save(new Food(seed.name(), seed.kcalPer100g(), seed.carbohydrate(),
+          seed.protein(), seed.fat()).withServingGrams(seed.servingGrams()));
+      added++;
+    }
+    if (added > 0) {
+      log.info("공용 기본 음식 {}개를 추가했어요 (전체 목록 {}개)", added, SeedFoodCatalog.foods().size());
+    }
   }
 
   private void createDemo() {

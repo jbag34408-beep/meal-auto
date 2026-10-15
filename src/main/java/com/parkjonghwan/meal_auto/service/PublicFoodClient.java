@@ -49,6 +49,11 @@ public class PublicFoodClient {
     return factory;
   }
 
+  // 키가 없으면 검색·가져오기를 쓸 수 없음 (화면이 미리 알 수 있게)
+  public boolean isConfigured() {
+    return !apiKey.isBlank();
+  }
+
   public List<FoodSearchResult> search(String keyword) {
     if (apiKey.isBlank()) {
       throw new ExternalApiException("공공데이터 API 키(FOOD_API_KEY)가 설정되지 않았어요");
