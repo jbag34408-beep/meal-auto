@@ -41,7 +41,7 @@ class DailyReportServiceTest {
 
     DailySummary summary = new DailySummary(today, 3, 628.0, 95.1, 53.2, 3.1);
     Recommendation recommendation = new Recommendation(almond, 94.0, "지방이 부족해요",
-        "지방", 94.0, 544.3, 1372.0, false, List.of());
+        "지방", 94.0, 544.3, 1372.0, false, List.of(), List.of());
 
     DailyReport saved = service.generateAndSave(member, today, summary, recommendation);
 
@@ -62,7 +62,7 @@ class DailyReportServiceTest {
 
     DailySummary summary = new DailySummary(today, 3, 628.0, 95.1, 53.2, 3.1);
     Recommendation recommendation = new Recommendation(almond, 94.0, "지방이 부족해요",
-        "지방", 94.0, 544.3, 1372.0, false, List.of());
+        "지방", 94.0, 544.3, 1372.0, false, List.of(), List.of());
 
     DailyReport result = service.generateAndSave(member, today, summary, recommendation);
 

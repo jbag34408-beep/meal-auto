@@ -44,6 +44,25 @@ export type Summary = {
 
 export type Shortfall = { nutrient: string; target: number; eaten: number; lack: number; ratio: number }
 
+// 추천 음식을 그 양만큼 먹었을 때 영양소 하나의 변화 (added = filled + over)
+export type NutrientEffect = { nutrient: string; added: number; filled: number; over: number }
+
+// 추천 후보 하나 (score = fillScore - overPenalty - kcalPenalty - recentPenalty)
+export type RecommendationOption = {
+  food: Food
+  grams: number
+  kcal: number
+  capped: boolean
+  recent: boolean
+  effects: NutrientEffect[]
+  score: number
+  fillScore: number
+  overPenalty: number
+  kcalPenalty: number
+  recentPenalty: number
+  summary: string
+}
+
 export type Recommendation = {
   food: Food
   grams: number
@@ -54,6 +73,7 @@ export type Recommendation = {
   remainingKcal: number
   capped: boolean
   shortfalls: Shortfall[]
+  options: RecommendationOption[] // 점수 순 최대 3개, 첫 번째가 위 food
 }
 
 export type PublicFood = {

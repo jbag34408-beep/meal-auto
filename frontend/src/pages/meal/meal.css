@@ -677,6 +677,88 @@
 }
 
 /* ───────── 추천 ───────── */
+.meal-options {
+  display: grid;
+  gap: 8px;
+}
+.meal-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 18px 14px 14px;
+  border-radius: 28px;
+  background: var(--aura-fill);
+  color: var(--aura-ink);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.meal-option:hover {
+  background: var(--aura-fill-hover);
+}
+.meal-option[aria-checked="true"] {
+  background: var(--aura-fill-focus);
+  box-shadow: inset 0 0 0 1.5px var(--aura-ink);
+}
+.meal-option-rank {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--aura-fill-hover);
+  font-size: 12px;
+  font-weight: 700;
+}
+.meal-option[aria-checked="true"] .meal-option-rank {
+  background: var(--aura-button);
+  color: var(--aura-button-ink);
+}
+.meal-option-text {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.meal-option-text b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.meal-option-text span {
+  font-size: 12.5px;
+  color: var(--aura-muted);
+}
+.meal-option-text .meal-option-summary {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--aura-faint);
+}
+.meal-option-tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--aura-fill-hover);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--aura-muted);
+}
+.meal-option-score {
+  flex-shrink: 0;
+  font-family: var(--aura-mono);
+  font-size: 12px;
+  color: var(--aura-muted);
+  font-variant-numeric: tabular-nums;
+}
+.meal-calc-effects {
+  margin: 4px 0 6px;
+  padding-left: 16px;
+  list-style: disc;
+}
 .meal-suggest {
   display: flex;
   align-items: center;
