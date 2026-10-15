@@ -120,6 +120,8 @@ const STYLES = `
   filter: drop-shadow(0 0 20px color-mix(in oklch, var(--cf-ink) 12%, transparent));
 }
 .footer-muted { color: var(--cf-muted); }
+/* 한 화면으로 쓸 때: 뒤의 배경(3D 크롬 등)이 그대로 보이게 */
+.cinematic-footer.is-page { background: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-footer-breathe, .animate-footer-scroll-marquee { animation: none; }
@@ -209,6 +211,10 @@ export type CinematicFooterProps = {
   links?: FooterLink[] // 작은 보조 링크
   copyright: string
   credit?: React.ReactNode
+  // curtain: 본문 아래에서 커튼처럼 드러나는 푸터 (원본 동작)
+  // page: 이것만으로 한 화면 (배경은 투명, 처음 열릴 때 떠오름)
+  mode?: "curtain" | "page"
+  corner?: React.ReactNode // page 모드에서 오른쪽 아래 (없으면 맨 위로 버튼)
 }
 
 function Marquee({ items }: { items: string[] }) {
@@ -224,17 +230,37 @@ function Marquee({ items }: { items: string[] }) {
   )
 }
 
-// 본문을 다 내리면 아래에 깔려 있던 푸터가 커튼처럼 드러남
-export function CinematicFooter({ heading, giantText, marquee, actions, links = [], copyright, credit }: CinematicFooterProps) {
-  const wrapperRef = useRef<HTMLDivElement>(null)
+export function CinematicFooter({
+  heading,
+  giantText,
+  marquee,
+  actions,
+  links = [],
+  copyright,
+  credit,
+  mode = "curtain",
+  corner,
+}: CinematicFooterProps) {
+  const isPage = mode === "page"
+  const rootRef = useRef<HTMLDivElement>(null)
   const giantTextRef = useRef<HTMLDivElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const linksRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!wrapperRef.current || reducedMotion()) return
+    if (!rootRef.current || reducedMotion()) return
 
     const ctx = gsap.context(() => {
+      if (isPage) {
+        // 처음 열릴 때: 큰 글자가 올라오고, 제목·버튼이 차례로 떠오름
+        gsap.fromTo(giantTextRef.current, { y: "10vh", scale: 0.85, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 1.6, ease: "power3.out" })
+        gsap.fromTo(
+          [headingRef.current, linksRef.current],
+          { y: 40, opacity: 0 },
+          { y: 0, opacity: 1, duration: 1, stagger: 0.15, delay: 0.2, ease: "power3.out" }
+        )
+        return
+      }
       gsap.fromTo(
         giantTextRef.current,
         { y: "10vh", scale: 0.8, opacity: 0 },
@@ -243,7 +269,7 @@ export function CinematicFooter({ heading, giantText, marquee, actions, links = 
           scale: 1,
           opacity: 1,
           ease: "power1.out",
-          scrollTrigger: { trigger: wrapperRef.current, start: "top 80%", end: "bottom bottom", scrub: 1 },
+          scrollTrigger: { trigger: rootRef.current, start: "top 80%", end: "bottom bottom", scrub: 1 },
         }
       )
       gsap.fromTo(
@@ -254,105 +280,129 @@ export function CinematicFooter({ heading, giantText, marquee, actions, links = 
           opacity: 1,
           stagger: 0.15,
           ease: "power3.out",
-          scrollTrigger: { trigger: wrapperRef.current, start: "top 40%", end: "bottom bottom", scrub: 1 },
+          scrollTrigger: { trigger: rootRef.current, start: "top 40%", end: "bottom bottom", scrub: 1 },
         }
       )
-    }, wrapperRef)
+    }, rootRef)
 
     return () => ctx.revert()
-  }, [])
+  }, [isPage])
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" })
 
-  return (
+  const content = (
     <>
-      <style dangerouslySetInnerHTML={{ __html: STYLES }} />
-
-      <div
-        ref={wrapperRef}
-        className="relative h-screen w-full"
-        style={{ clipPath: "polygon(0% 0, 100% 0%, 100% 100%, 0 100%)" }}
-      >
-        <footer className="cinematic-footer fixed bottom-0 left-0 flex h-screen w-full flex-col justify-between overflow-hidden">
+      {!isPage && (
+        <>
           <div className="footer-aurora animate-footer-breathe pointer-events-none absolute left-1/2 top-1/2 z-0 h-[60vh] w-[80vw] -translate-x-1/2 -translate-y-1/2 rounded-[50%] blur-[80px]" />
           <div className="footer-bg-grid pointer-events-none absolute inset-0 z-0" />
+        </>
+      )}
 
-          <div
-            ref={giantTextRef}
-            aria-hidden
-            className="footer-giant-bg-text pointer-events-none absolute -bottom-[5vh] left-1/2 z-0 -translate-x-1/2 whitespace-nowrap select-none"
-          >
-            {giantText}
+      <div
+        ref={giantTextRef}
+        aria-hidden
+        className="footer-giant-bg-text pointer-events-none absolute -bottom-[5vh] left-1/2 z-0 -translate-x-1/2 whitespace-nowrap select-none"
+      >
+        {giantText}
+      </div>
+
+      <div className="footer-marquee absolute left-0 top-12 z-10 w-full -rotate-2 scale-110 overflow-hidden py-4 shadow-2xl" aria-hidden>
+        <div className="animate-footer-scroll-marquee flex w-max text-xs font-medium tracking-[0.14em] uppercase md:text-sm">
+          <Marquee items={marquee} />
+          <Marquee items={marquee} />
+        </div>
+      </div>
+
+      <div className="relative z-10 mx-auto mt-20 flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-6">
+        {isPage ? (
+          <h1 ref={headingRef} className="footer-text-glow mb-12 text-center text-5xl font-bold tracking-tighter md:text-7xl">
+            {heading}
+          </h1>
+        ) : (
+          <h2 ref={headingRef} className="footer-text-glow mb-12 text-center text-5xl font-bold tracking-tighter md:text-7xl">
+            {heading}
+          </h2>
+        )}
+
+        <div ref={linksRef} className="flex w-full flex-col items-center gap-6">
+          <div className="flex w-full flex-wrap justify-center gap-4">
+            {actions.map((a) => (
+              <MagneticButton
+                key={a.label}
+                {...linkProps(a)}
+                className={cn(
+                  "footer-glass-pill group flex items-center gap-3 rounded-full px-10 py-5 text-sm font-bold md:text-base",
+                  a.primary && "is-primary"
+                )}
+              >
+                {a.label}
+                {a.icon}
+              </MagneticButton>
+            ))}
           </div>
 
-          <div className="footer-marquee absolute left-0 top-12 z-10 w-full -rotate-2 scale-110 overflow-hidden py-4 shadow-2xl" aria-hidden>
-            <div className="animate-footer-scroll-marquee flex w-max text-xs font-medium tracking-[0.14em] uppercase md:text-sm">
-              <Marquee items={marquee} />
-              <Marquee items={marquee} />
+          {links.length > 0 && (
+            <div className="mt-2 flex w-full flex-wrap justify-center gap-3 md:gap-6">
+              {links.map((l) => (
+                <MagneticButton
+                  key={l.label}
+                  {...linkProps(l)}
+                  className="footer-glass-pill is-muted rounded-full px-6 py-3 text-xs font-medium md:text-sm"
+                >
+                  {l.label}
+                </MagneticButton>
+              ))}
             </div>
+          )}
+        </div>
+      </div>
+
+      <div className="relative z-20 flex w-full flex-col items-center justify-between gap-6 px-6 pb-8 md:flex-row md:px-12">
+        <div className="footer-muted order-2 text-[10px] font-semibold tracking-widest uppercase md:order-1 md:text-xs">
+          {copyright}
+        </div>
+
+        {credit && (
+          <div className="footer-glass-pill is-muted order-1 flex cursor-default items-center gap-2 rounded-full px-6 py-3 text-[10px] font-semibold tracking-widest md:order-2 md:text-xs">
+            {credit}
           </div>
+        )}
 
-          <div className="relative z-10 mx-auto mt-20 flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-6">
-            <h2 ref={headingRef} className="footer-text-glow mb-12 text-center text-5xl font-bold tracking-tighter md:text-7xl">
-              {heading}
-            </h2>
-
-            <div ref={linksRef} className="flex w-full flex-col items-center gap-6">
-              <div className="flex w-full flex-wrap justify-center gap-4">
-                {actions.map((a) => (
-                  <MagneticButton
-                    key={a.label}
-                    {...linkProps(a)}
-                    className={cn(
-                      "footer-glass-pill group flex items-center gap-3 rounded-full px-10 py-5 text-sm font-bold md:text-base",
-                      a.primary && "is-primary"
-                    )}
-                  >
-                    {a.label}
-                    {a.icon}
-                  </MagneticButton>
-                ))}
-              </div>
-
-              {links.length > 0 && (
-                <div className="mt-2 flex w-full flex-wrap justify-center gap-3 md:gap-6">
-                  {links.map((l) => (
-                    <MagneticButton
-                      key={l.label}
-                      {...linkProps(l)}
-                      className="footer-glass-pill is-muted rounded-full px-6 py-3 text-xs font-medium md:text-sm"
-                    >
-                      {l.label}
-                    </MagneticButton>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="relative z-20 flex w-full flex-col items-center justify-between gap-6 px-6 pb-8 md:flex-row md:px-12">
-            <div className="footer-muted order-2 text-[10px] font-semibold tracking-widest uppercase md:order-1 md:text-xs">
-              {copyright}
-            </div>
-
-            {credit && (
-              <div className="footer-glass-pill is-muted order-1 flex cursor-default items-center gap-2 rounded-full px-6 py-3 text-[10px] font-semibold tracking-widest md:order-2 md:text-xs">
-                {credit}
-              </div>
-            )}
-
+        <div className="order-3">
+          {isPage && corner ? (
+            corner
+          ) : (
             <MagneticButton
               as="button"
               type="button"
               onClick={scrollToTop}
               aria-label="맨 위로"
-              className="footer-glass-pill is-muted group order-3 flex h-12 w-12 items-center justify-center rounded-full"
+              className="footer-glass-pill is-muted group flex h-12 w-12 items-center justify-center rounded-full"
             >
               <ArrowUp className="h-5 w-5 transition-transform duration-300 group-hover:-translate-y-1.5" aria-hidden />
             </MagneticButton>
-          </div>
-        </footer>
+          )}
+        </div>
       </div>
+    </>
+  )
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: STYLES }} />
+
+      {isPage ? (
+        <div ref={rootRef} className="cinematic-footer is-page relative flex h-full w-full flex-col justify-between overflow-hidden">
+          {content}
+        </div>
+      ) : (
+        <div ref={rootRef} className="relative h-screen w-full" style={{ clipPath: "polygon(0% 0, 100% 0%, 100% 100%, 0 100%)" }}>
+          <footer className="cinematic-footer fixed bottom-0 left-0 flex h-screen w-full flex-col justify-between overflow-hidden">
+            {content}
+          </footer>
+        </div>
+      )}
     </>
   )
 }

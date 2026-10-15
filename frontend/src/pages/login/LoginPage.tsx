@@ -11,7 +11,10 @@ const DEMO = { username: "demo", password: "demo1234" }
 // 로그인·회원가입 화면: 배경·테마 버튼·카드 배치는 여기서, 서버 요청도 여기서
 export default function LoginPage() {
   const [theme, setTheme] = useAuraTheme()
-  const [mode, setMode] = useState<AuthMode>("login")
+  // 소개 화면의 "회원가입"(?mode=signup)으로 들어오면 가입 카드부터
+  const [mode, setMode] = useState<AuthMode>(() =>
+    new URLSearchParams(location.search).get("mode") === "signup" ? "signup" : "login"
+  )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
 
