@@ -676,70 +676,101 @@
   color: var(--aura-danger);
 }
 
-/* ───────── 추천 ───────── */
-.meal-options {
+/* ───────── 식단 추천 (한식 상차림) ───────── */
+.meal-plan-tabs {
   display: grid;
-  gap: 8px;
-}
-.meal-option {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 14px 18px 14px 14px;
-  border-radius: 28px;
-  background: var(--aura-fill);
-  color: var(--aura-ink);
-  text-align: left;
-  cursor: pointer;
-  box-shadow: inset 0 0 0 1px transparent;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
-}
-.meal-option:hover {
-  background: var(--aura-fill-hover);
-}
-.meal-option[aria-checked="true"] {
-  background: var(--aura-fill-focus);
-  box-shadow: inset 0 0 0 1.5px var(--aura-ink);
-}
-.meal-option-rank {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+  padding: 5px;
   border-radius: 999px;
-  background: var(--aura-fill-hover);
-  font-size: 12px;
-  font-weight: 700;
+  background: var(--aura-fill);
 }
-.meal-option[aria-checked="true"] .meal-option-rank {
+.meal-plan-tab {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 8px 6px;
+  border-radius: 999px;
+  color: var(--aura-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.meal-plan-tab small {
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.meal-plan-tab:hover {
+  color: var(--aura-ink);
+}
+.meal-plan-tab[aria-selected="true"] {
   background: var(--aura-button);
   color: var(--aura-button-ink);
 }
-.meal-option-text {
-  display: grid;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
+.meal-plan-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 8px;
 }
-.meal-option-text b {
+.meal-plan-head b {
+  font-size: 16px;
+  font-weight: 600;
+}
+.meal-plan-head span {
+  font-size: 12.5px;
+  color: var(--aura-muted);
+  font-variant-numeric: tabular-nums;
+}
+.meal-plan-items {
+  display: grid;
+  gap: 6px;
+}
+.meal-plan-items li {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto 64px;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 18px 6px 16px;
+  border-radius: 24px;
+  background: var(--aura-fill);
+}
+.meal-plan-cat {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--aura-faint);
+}
+.meal-plan-food {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+  min-width: 0;
+}
+.meal-plan-food b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14.5px;
   font-weight: 500;
 }
-.meal-option-text span {
+.meal-plan-grams,
+.meal-plan-kcal {
   font-size: 12.5px;
   color: var(--aura-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-.meal-option-text .meal-option-summary {
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--aura-faint);
+.meal-plan-kcal {
+  color: var(--aura-ink);
 }
 .meal-option-tag {
+  flex-shrink: 0;
   padding: 1px 8px;
   border-radius: 999px;
   background: var(--aura-fill-hover);
@@ -747,92 +778,27 @@
   font-weight: 500;
   color: var(--aura-muted);
 }
-.meal-option-score {
-  flex-shrink: 0;
-  font-family: var(--aura-mono);
-  font-size: 12px;
-  color: var(--aura-muted);
-  font-variant-numeric: tabular-nums;
-}
-.meal-calc-effects {
-  margin: 4px 0 6px;
-  padding-left: 16px;
-  list-style: disc;
-}
-.meal-suggest {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 16px 16px 24px;
-  border-radius: 28px;
-  background: var(--aura-fill);
-}
-.meal-suggest-text {
-  display: grid;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-.meal-suggest-text b {
-  font-size: 16px;
-  font-weight: 500;
-}
-.meal-suggest-text span {
-  font-size: 12.5px;
-  color: var(--aura-muted);
-}
-.meal-badge {
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: var(--aura-fill-hover);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.meal-suggest-reason {
-  margin-top: -8px;
-  padding: 0 16px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--aura-muted);
-}
-.meal-shortfalls {
+.meal-fit {
   display: grid;
   gap: 10px;
   padding: 0 8px;
 }
-.meal-shortfalls li {
+.meal-fit li {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) 72px;
+  grid-template-columns: 56px minmax(0, 1fr) 92px;
   align-items: center;
   gap: 12px;
   font-size: 12.5px;
   color: var(--aura-muted);
 }
-.meal-shortfalls li.is-pick {
-  color: var(--aura-ink);
-  font-weight: 500;
-}
-.meal-shortfall-detail {
+.meal-fit-value {
   text-align: right;
+  color: var(--aura-ink);
   font-variant-numeric: tabular-nums;
 }
-.meal-calc {
-  padding: 0 16px;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--aura-muted);
-}
-.meal-calc summary {
-  width: fit-content;
-  font-family: var(--aura-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.08em;
+.meal-fit-value small {
+  font-size: 11px;
   color: var(--aura-faint);
-  cursor: pointer;
-}
-.meal-calc[open] summary {
-  margin-bottom: 6px;
 }
 
 /* ───────── 관리 ───────── */

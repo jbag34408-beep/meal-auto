@@ -3,6 +3,8 @@ package com.parkjonghwan.meal_auto.config;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.parkjonghwan.meal_auto.config.SeedFoodCatalog.SeedFood;
+import com.parkjonghwan.meal_auto.domain.FoodCategory;
+import java.util.EnumMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -26,5 +28,18 @@ class SeedFoodCatalogTest {
       assertThat(f.carbohydrate() + f.protein() + f.fat()).isLessThanOrEqualTo(100.0);
       assertThat(f.servingGrams()).isPositive();
     });
+  }
+
+  @Test
+  void 한식_상차림에_필요한_자리가_모두_채워져_있다() {
+    var byCategory = new EnumMap<FoodCategory, Integer>(FoodCategory.class);
+    foods.stream().filter(f -> f.category() != null)
+        .forEach(f -> byCategory.merge(f.category(), 1, Integer::sum));
+
+    assertThat(byCategory.get(FoodCategory.RICE)).isGreaterThanOrEqualTo(3);
+    assertThat(byCategory.get(FoodCategory.SOUP)).isGreaterThanOrEqualTo(6);
+    assertThat(byCategory.get(FoodCategory.MAIN)).isGreaterThanOrEqualTo(8);
+    assertThat(byCategory.get(FoodCategory.SIDE)).isGreaterThanOrEqualTo(8);
+    assertThat(byCategory.get(FoodCategory.KIMCHI)).isGreaterThanOrEqualTo(1);
   }
 }

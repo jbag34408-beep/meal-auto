@@ -4,6 +4,7 @@ import com.parkjonghwan.meal_auto.domain.Food;
 import com.parkjonghwan.meal_auto.domain.MealEntry;
 import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.dto.DailySummary;
+import com.parkjonghwan.meal_auto.dto.MealBulkRequest;
 import com.parkjonghwan.meal_auto.dto.MealEntryRequest;
 import com.parkjonghwan.meal_auto.dto.Recommendation;
 import com.parkjonghwan.meal_auto.exception.FoodNotFoundException;
@@ -16,9 +17,11 @@ import jakarta.validation.Valid;
 import java.security.Principal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -52,6 +55,21 @@ public class MealController {
         .orElseThrow(() -> new FoodNotFoundException(request.foodId()));
     return mealEntryRepository.save(new MealEntry(member, orToday(request.date()),
         request.mealType(), food, request.grams()));
+  }
+
+  // 추천 상차림을 한 번에 기록 → 하나라도 실패하면 전부 취소
+  @PostMapping("/meals/bulk")
+  @Transactional
+  public List<MealEntry> addMeals(Principal principal, @Valid @RequestBody MealBulkRequest request) {
+    Member member = memberService.get(principal.getName());
+    LocalDate date = orToday(request.date());
+    List<MealEntry> saved = new ArrayList<>();
+    for (MealBulkRequest.Item item : request.items()) {
+      Food food = foodRepository.findVisibleById(member, item.foodId())
+          .orElseThrow(() -> new FoodNotFoundException(item.foodId()));
+      saved.add(mealEntryRepository.save(new MealEntry(member, date, request.mealType(), food, item.grams())));
+    }
+    return saved;
   }
 
   // 남의 기록은 "없는 기록"처럼 404로 응답 (존재 여부도 알려주지 않음)

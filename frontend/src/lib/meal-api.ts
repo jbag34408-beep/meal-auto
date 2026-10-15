@@ -30,6 +30,7 @@ export type Food = {
   source?: "SEED" | "PUBLIC" | "USER" | "AI" | string
   shared?: boolean // true: 모두가 쓰는 공용 음식, false: 내 개인 음식
   servingGrams?: number | null // 1인분(g), 기본 음식에만 있음
+  category?: FoodCategory | null // 상차림 자리, 기본 음식에만 있음
 }
 
 export type MealEntry = { id: number; date: string; mealType: MealType; food: Food; grams: number }
@@ -43,39 +44,25 @@ export type Summary = {
   totalFat: number
 }
 
-export type Shortfall = { nutrient: string; target: number; eaten: number; lack: number; ratio: number }
+export type FoodCategory = "RICE" | "SOUP" | "MAIN" | "SIDE" | "KIMCHI"
 
-// 추천 음식을 그 양만큼 먹었을 때 영양소 하나의 변화 (added = filled + over)
-export type NutrientEffect = { nutrient: string; added: number; filled: number; over: number }
+export type Nutrition = { kcal: number; carbohydrate: number; protein: number; fat: number }
 
-// 추천 후보 하나 (score = fillScore - overPenalty - kcalPenalty - recentPenalty)
-export type RecommendationOption = {
+// 상차림의 음식 하나 (예: 잡곡밥 158g)
+export type MealPlanItem = {
   food: Food
+  category: FoodCategory
+  categoryLabel: string // 밥, 국·찌개, 주반찬, 나물·볶음, 김치
   grams: number
-  kcal: number
-  capped: boolean
-  recent: boolean
-  effects: NutrientEffect[]
-  score: number
-  fillScore: number
-  overPenalty: number
-  kcalPenalty: number
-  recentPenalty: number
-  summary: string
+  nutrition: Nutrition
+  recent: boolean // 최근 3일 안에 먹은 메뉴
 }
 
-export type Recommendation = {
-  food: Food
-  grams: number
-  reason: string
-  nutrient: string
-  neededGrams: number
-  kcal: number
-  remainingKcal: number
-  capped: boolean
-  shortfalls: Shortfall[]
-  options: RecommendationOption[] // 점수 순 최대 3개, 첫 번째가 위 food
-}
+// 한 끼 한식 상차림 (target: 이 끼니에 먹으면 좋은 양, total: 상차림 합계)
+export type MealPlan = { mealType: MealType; target: Nutrition; total: Nutrition; items: MealPlanItem[] }
+
+// 하루 식단 추천: 아직 안 먹은 끼니마다 상차림 하나 (meals가 비면 message)
+export type MealPlanResponse = { date: string; remaining: Nutrition; meals: MealPlan[]; message: string | null }
 
 export type PublicFood = {
   name: string
@@ -130,14 +117,16 @@ export const getMeals = async (date: string): Promise<MealEntry[]> =>
 export const getSummary = async (date: string): Promise<Summary> =>
   (await request(`/summary?date=${date}`)).json()
 
-// 추천할 음식이 없으면 서버가 빈 본문을 보냄
-export async function getRecommendation(date: string): Promise<Recommendation | null> {
-  const text = await (await request(`/recommendation?date=${date}`)).text()
-  return text ? (JSON.parse(text) as Recommendation) : null
-}
+export const getMealPlan = async (date: string): Promise<MealPlanResponse> =>
+  (await request(`/meal-plan?date=${date}`)).json()
 
 export async function addMeal(entry: { date: string; mealType: MealType; foodId: number; grams: number }) {
   await request("/meals", json(entry))
+}
+
+// 추천 상차림을 한 번에 기록 (하나라도 실패하면 서버가 전부 취소)
+export async function addMeals(body: { date: string; mealType: MealType; items: { foodId: number; grams: number }[] }) {
+  await request("/meals/bulk", json(body))
 }
 
 export const analyzeMeal = async (body: { date: string; mealType: MealType; text: string }): Promise<MealEntry[]> =>

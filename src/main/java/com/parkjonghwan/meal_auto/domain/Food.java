@@ -1,6 +1,7 @@
 package com.parkjonghwan.meal_auto.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -29,6 +30,11 @@ public class Food {
 
   // 1인분(g): 기본 음식에만 있음 (추천할 때 최대 2인분까지만 권함, 비어 있으면 제한 없음)
   private Double servingGrams;
+
+  // 상차림 자리 (밥·국·주반찬·나물·김치): 기본 음식에만 있음, 비어 있으면 식단 추천에 안 씀
+  @Enumerated(EnumType.STRING)
+  @Column(length = 20)
+  private FoodCategory category;
 
   // 주인: 비어 있으면 모두가 쓰는 공용 음식(기본 음식·공공데이터),
   // 있으면 그 회원만 보고 쓰는 개인 음식(직접 등록·AI 추정)
@@ -71,6 +77,7 @@ public class Food {
   }
 
   public Double getServingGrams() { return servingGrams; }
+  public FoodCategory getCategory() { return category; }
 
   @JsonIgnore
   public Member getOwner() { return owner; }
@@ -81,6 +88,12 @@ public class Food {
   // 기본 음식의 1인분 양 지정 (DataInitializer)
   public Food withServingGrams(Double servingGrams) {
     this.servingGrams = servingGrams;
+    return this;
+  }
+
+  // 기본 음식의 상차림 자리 지정 (DataInitializer)
+  public Food withCategory(FoodCategory category) {
+    this.category = category;
     return this;
   }
 

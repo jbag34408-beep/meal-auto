@@ -63,7 +63,7 @@ public class DataInitializer implements CommandLineRunner {
     assignLegacyFoodOwners();
   }
 
-  // 이미 있는 음식의 영양 값은 그대로 두고, 1인분 양이 비어 있으면 채움
+  // 이미 있는 음식의 영양 값은 그대로 두고, 1인분 양·상차림 분류가 비어 있으면 채움
   private void addMissingSeedFoods() {
     int added = 0;
     for (SeedFood seed : SeedFoodCatalog.foods()) {
@@ -72,10 +72,13 @@ public class DataInitializer implements CommandLineRunner {
         if (existing.get().getServingGrams() == null) {
           existing.get().withServingGrams(seed.servingGrams());   // 변경 감지로 자동 저장
         }
+        if (existing.get().getCategory() == null && seed.category() != null) {
+          existing.get().withCategory(seed.category());
+        }
         continue;
       }
       foodRepository.save(new Food(seed.name(), seed.kcalPer100g(), seed.carbohydrate(),
-          seed.protein(), seed.fat()).withServingGrams(seed.servingGrams()));
+          seed.protein(), seed.fat()).withServingGrams(seed.servingGrams()).withCategory(seed.category()));
       added++;
     }
     if (added > 0) {

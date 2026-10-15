@@ -7,7 +7,7 @@ import {
   getFoods,
   getMe,
   getMeals,
-  getRecommendation,
+  getMealPlan,
   getSummary,
   logout,
   shiftDate,
@@ -15,18 +15,18 @@ import {
   type Food,
   type Me,
   type MealEntry,
-  type Recommendation,
+  type MealPlanResponse,
   type Summary,
 } from "@/lib/meal-api"
 import { LogCard } from "./LogCard"
 import { ManageCard } from "./ManageCard"
-import { RecommendCard } from "./RecommendCard"
+import { MealPlanCard } from "./MealPlanCard"
 import { RecordsCard } from "./RecordsCard"
 import { SummaryCard } from "./SummaryCard"
 import "@/components/aura/aura.css"
 import "./meal.css"
 
-type Day = { meals: MealEntry[]; summary: Summary; rec: Recommendation | null; animate: boolean }
+type Day = { meals: MealEntry[]; summary: Summary; plan: MealPlanResponse | null; animate: boolean }
 
 const today = todayKst()
 
@@ -55,8 +55,8 @@ export default function MealPage() {
   // animate: 내가 방금 바꾼 기록 때문에 다시 계산한 경우에만 변화를 보여 줌 (첫 로딩·날짜 변경은 조용히)
   const loadDay = useCallback(async (target: string, animate = false) => {
     try {
-      const [meals, summary, rec] = await Promise.all([getMeals(target), getSummary(target), getRecommendation(target)])
-      setDay({ meals, summary, rec, animate })
+      const [meals, summary, plan] = await Promise.all([getMeals(target), getSummary(target), getMealPlan(target)])
+      setDay({ meals, summary, plan, animate })
       setLoadError("")
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "불러오지 못했어요.")
@@ -151,11 +151,9 @@ export default function MealPage() {
               <RecordsCard meals={day.meals} isToday={date === today} onChanged={refresh} />
             </div>
             <div className="meal-col is-side">
-              <RecommendCard
+              <MealPlanCard
                 key={date}
-                me={me}
-                rec={day.rec}
-                summary={day.summary}
+                plan={day.plan}
                 date={date}
                 isPast={date < today}
                 onSaved={refresh}

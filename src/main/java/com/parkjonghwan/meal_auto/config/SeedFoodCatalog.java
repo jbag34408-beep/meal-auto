@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import com.parkjonghwan.meal_auto.domain.FoodCategory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -12,12 +13,14 @@ import java.util.stream.Collectors;
 import org.springframework.core.io.ClassPathResource;
 
 // 공용 기본 음식 목록 (src/main/resources/seed/foods.csv)
-// 한 줄: 이름,kcal,탄수화물,단백질,지방,1인분(g)  — 모두 100g 기준, '#'으로 시작하는 줄은 설명
+// 한 줄: 이름,kcal,탄수화물,단백질,지방,1인분(g),상차림 분류(비어 있을 수 있음)
+// 영양 값은 100g 기준, '#'으로 시작하는 줄은 설명
 public final class SeedFoodCatalog {
   public static final String PATH = "seed/foods.csv";
 
   public record SeedFood(String name, double kcalPer100g, double carbohydrate,
-                         double protein, double fat, double servingGrams) {}
+                         double protein, double fat, double servingGrams,
+                         FoodCategory category) {}
 
   private static final List<SeedFood> FOODS = load();
 
@@ -43,12 +46,13 @@ public final class SeedFoodCatalog {
         if (trimmed.isEmpty() || trimmed.startsWith("#")) {
           continue;
         }
-        String[] cols = trimmed.split(",");
-        if (cols.length != 6) {
-          throw new IllegalStateException(PATH + " " + lineNo + "번째 줄의 칸 수가 6개가 아니에요: " + line);
+        String[] cols = trimmed.split(",", -1);   // 끝의 빈 칸(분류 없음)도 칸으로 셈
+        if (cols.length != 7) {
+          throw new IllegalStateException(PATH + " " + lineNo + "번째 줄의 칸 수가 7개가 아니에요: " + line);
         }
+        String category = cols[6].strip();
         foods.add(new SeedFood(cols[0].strip(), num(cols[1]), num(cols[2]), num(cols[3]),
-            num(cols[4]), num(cols[5])));
+            num(cols[4]), num(cols[5]), category.isEmpty() ? null : FoodCategory.valueOf(category)));
       }
     } catch (IOException e) {
       throw new UncheckedIOException(PATH + "를 읽지 못했어요", e);
