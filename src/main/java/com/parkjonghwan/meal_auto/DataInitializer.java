@@ -8,6 +8,7 @@ import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.repository.FoodRepository;
 import com.parkjonghwan.meal_auto.repository.MealEntryRepository;
 import com.parkjonghwan.meal_auto.repository.MemberRepository;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -31,15 +32,18 @@ public class DataInitializer implements CommandLineRunner {
   private final MealEntryRepository mealEntryRepository;
   private final MemberRepository memberRepository;
   private final PasswordEncoder passwordEncoder;
+  private final Clock clock;   // 한국 시간 (config/TimeConfig)
 
   public DataInitializer(FoodRepository foodRepository,
                          MealEntryRepository mealEntryRepository,
                          MemberRepository memberRepository,
-                         PasswordEncoder passwordEncoder) {
+                         PasswordEncoder passwordEncoder,
+                         Clock clock) {
     this.foodRepository = foodRepository;
     this.mealEntryRepository = mealEntryRepository;
     this.memberRepository = memberRepository;
     this.passwordEncoder = passwordEncoder;
+    this.clock = clock;
   }
 
   @Override
@@ -74,7 +78,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     // 예전 기록이 없으면 샘플 기록 생성
-    LocalDate today = LocalDate.now();
+    LocalDate today = LocalDate.now(clock);
     foodRepository.findFirstByOwnerIsNullAndNameIgnoreCase("바나나").ifPresent(f ->
         mealEntryRepository.save(new MealEntry(demo, today, MealType.BREAKFAST, f, 120)));
     foodRepository.findFirstByOwnerIsNullAndNameIgnoreCase("쌀밥").ifPresent(f ->

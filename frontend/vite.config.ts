@@ -32,6 +32,7 @@ export default defineConfig({
       "^/login$": API,
       "/signup": API,
       "/logout": API,
+      "/csrf": API,
       "/me": API,
       "/meals": API,
       "/foods": API,

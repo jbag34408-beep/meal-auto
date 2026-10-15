@@ -1,5 +1,6 @@
 package com.parkjonghwan.meal_auto.service;
 
+import com.parkjonghwan.meal_auto.config.TimeConfig;
 import com.parkjonghwan.meal_auto.domain.DailyReport;
 import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.dto.DailySummary;
@@ -7,7 +8,6 @@ import com.parkjonghwan.meal_auto.dto.Recommendation;
 import com.parkjonghwan.meal_auto.repository.DailyReportRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +36,7 @@ public class DailyReportService {
       return dailyReportRepository.save(report);
     }
 
-    LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+    LocalDateTime createdAt = LocalDateTime.now(TimeConfig.ZONE);
     return dailyReportRepository.save(new DailyReport(member, date, summary.getMealCount(),
         summary.getTotalKcal(), summary.getTotalCarbohydrate(), summary.getTotalProtein(),
         summary.getTotalFat(), recommendedFood, recommendedGrams, createdAt));

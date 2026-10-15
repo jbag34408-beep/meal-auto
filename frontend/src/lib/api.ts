@@ -1,5 +1,7 @@
 // Spring Boot API 호출 모음 (같은 주소라서 로그인 세션 쿠키가 자동으로 붙음)
 
+import { secureFetch } from "./csrf"
+
 type ErrorBody = { message?: string; errors?: Record<string, string> }
 
 // 서버 오류 응답에서 사용자에게 보여줄 문장을 꺼냄
@@ -14,7 +16,7 @@ async function errorText(res: Response, fallback: string) {
 
 // Spring Security 로그인은 JSON이 아니라 폼 형식(username=...&password=...)으로 보냄
 export async function login(username: string, password: string) {
-  const res = await fetch("/login", {
+  const res = await secureFetch("/login", {
     method: "POST",
     body: new URLSearchParams({ username, password }),
   })
@@ -22,7 +24,7 @@ export async function login(username: string, password: string) {
 }
 
 export async function signup(username: string, password: string) {
-  const res = await fetch("/signup", {
+  const res = await secureFetch("/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),

@@ -1,5 +1,6 @@
 package com.parkjonghwan.meal_auto.scheduler;
 
+import com.parkjonghwan.meal_auto.config.TimeConfig;
 import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.dto.DailySummary;
 import com.parkjonghwan.meal_auto.dto.Recommendation;
@@ -8,7 +9,6 @@ import com.parkjonghwan.meal_auto.service.DailyReportService;
 import com.parkjonghwan.meal_auto.service.MealRecommendService;
 import com.parkjonghwan.meal_auto.service.MealSummaryService;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -36,7 +36,7 @@ public class DailyMealScheduler {
   // 매일 21:00 (한국 시간), 회원마다 리포트 생성
   @Scheduled(cron = "0 0 21 * * *", zone = "Asia/Seoul")
   public void dailyReport() {
-    LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+    LocalDate today = LocalDate.now(TimeConfig.ZONE);
 
     for (Member member : memberRepository.findAll()) {
       DailySummary summary = summaryService.summarizeDay(member, today);

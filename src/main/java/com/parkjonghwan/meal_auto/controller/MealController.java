@@ -14,6 +14,7 @@ import com.parkjonghwan.meal_auto.service.MealSummaryService;
 import com.parkjonghwan.meal_auto.service.MemberService;
 import jakarta.validation.Valid;
 import java.security.Principal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -27,17 +28,20 @@ public class MealController {
   private final MealSummaryService summaryService;
   private final MealRecommendService recommendService;
   private final MemberService memberService;
+  private final Clock clock;   // 한국 시간 (config/TimeConfig)
 
   public MealController(FoodRepository foodRepository,
                         MealEntryRepository mealEntryRepository,
                         MealSummaryService summaryService,
                         MealRecommendService recommendService,
-                        MemberService memberService) {
+                        MemberService memberService,
+                        Clock clock) {
     this.foodRepository = foodRepository;
     this.mealEntryRepository = mealEntryRepository;
     this.summaryService = summaryService;
     this.recommendService = recommendService;
     this.memberService = memberService;
+    this.clock = clock;
   }
 
   @PostMapping("/meals")
@@ -86,6 +90,6 @@ public class MealController {
   }
 
   private LocalDate orToday(LocalDate date) {
-    return date != null ? date : LocalDate.now();
+    return date != null ? date : LocalDate.now(clock);   // 날짜를 안 보내면 한국 날짜
   }
 }

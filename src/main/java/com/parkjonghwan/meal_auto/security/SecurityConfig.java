@@ -18,12 +18,15 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-        // 학습용으로 CSRF 보호는 끔 (실서비스에서는 켜는 것이 원칙)
-        .csrf(csrf -> csrf.disable())
+        // CSRF 보호: 세션 쿠키로 로그인하므로 다른 사이트가 몰래 보낸 요청을 막아야 함
+        // spa(): 토큰을 XSRF-TOKEN 쿠키(JS가 읽을 수 있음)로 내려 주고,
+        //        화면은 POST·PUT·DELETE 때 그 값을 X-XSRF-TOKEN 헤더로 돌려보냄 (frontend/src/lib/csrf.ts)
+        // 로그인·회원가입·로그아웃도 모두 토큰이 있어야 처리됨
+        .csrf(csrf -> csrf.spa())
 
         // 로그인 없이 접근 가능한 주소만 열고, 나머지는 모두 로그인 필요
         .authorizeHttpRequests(auth -> auth
-          .requestMatchers("/", "/landing.html", "/login.html", "/assets/**", "/signup", "/login", "/error", "/favicon.ico").permitAll()
+          .requestMatchers("/", "/landing.html", "/login.html", "/assets/**", "/signup", "/login", "/csrf", "/error", "/favicon.ico").permitAll()
             .anyRequest().authenticated())
 
         // 로그인: 화면은 login.html, 처리 주소는 POST /login

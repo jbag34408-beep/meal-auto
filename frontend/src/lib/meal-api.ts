@@ -1,5 +1,7 @@
 // 식단 화면에서 쓰는 Spring Boot API (응답 모양은 서버의 DTO·엔티티와 같음)
 
+import { secureFetch } from "./csrf"
+
 export type MealType = "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK"
 
 export const MEAL_ORDER: MealType[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"]
@@ -76,7 +78,7 @@ export class ApiError extends Error {
 
 // 모든 요청은 여기로: 로그인이 풀렸으면(401) 로그인 화면으로
 async function request(url: string, init?: RequestInit) {
-  const res = await fetch(url, init)
+  const res = await secureFetch(url, init)
   if (res.status === 401) {
     location.href = "/login.html"
     throw new ApiError("로그인이 필요해요", 401)
@@ -139,7 +141,7 @@ export const searchPublicFoods = async (keyword: string): Promise<PublicFood[]> 
   (await request(`/foods/public?keyword=${encodeURIComponent(keyword)}`)).json()
 
 export async function logout() {
-  await fetch("/logout", { method: "POST" })
+  await secureFetch("/logout", { method: "POST" })
   location.href = "/login.html"
 }
 

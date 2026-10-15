@@ -16,6 +16,9 @@ import com.parkjonghwan.meal_auto.repository.FoodRepository;
 import com.parkjonghwan.meal_auto.repository.MealEntryRepository;
 import com.parkjonghwan.meal_auto.repository.MemberRepository;
 import com.parkjonghwan.meal_auto.service.ai.FakeNutritionAnalyzer;
+import com.parkjonghwan.meal_auto.config.TimeConfig;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +54,14 @@ class MealAnalysisServiceTest {
     @Primary
     FakeNutritionAnalyzer fakeNutritionAnalyzer() {
       return new FakeNutritionAnalyzer();
+    }
+
+    // 지금 시각을 UTC 2026-10-14 23:30으로 고정 = 한국 시각 2026-10-15 오전 8:30
+    // (서버가 UTC 기준으로 날짜를 정하면 전날인 10/14가 됨)
+    @Bean
+    @Primary
+    Clock fixedClock() {
+      return Clock.fixed(Instant.parse("2026-10-14T23:30:00Z"), TimeConfig.ZONE);
     }
   }
 
@@ -235,12 +246,13 @@ class MealAnalysisServiceTest {
   }
 
   @Test
-  @DisplayName("날짜를 보내지 않으면 오늘 날짜로 저장한다")
-  void usesTodayWhenDateOmitted() {
+  @DisplayName("날짜를 보내지 않으면 한국 날짜로 저장한다 (UTC로는 아직 전날인 오전 8:30)")
+  void usesKoreanTodayWhenDateOmitted() {
     fakeAnalyzer.willReturn(food(TEST_PREFIX + "사과", 150));
 
     mealAnalysisService.recordFromText(member, request(null));
 
-    assertThat(entriesOn(LocalDate.now())).hasSize(1);
+    assertThat(entriesOn(LocalDate.of(2026, 10, 15))).hasSize(1);
+    assertThat(entriesOn(LocalDate.of(2026, 10, 14))).isEmpty();
   }
 }

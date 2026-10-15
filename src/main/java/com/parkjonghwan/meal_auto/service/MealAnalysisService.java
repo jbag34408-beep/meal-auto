@@ -9,6 +9,7 @@ import com.parkjonghwan.meal_auto.exception.NoFoodRecognizedException;
 import com.parkjonghwan.meal_auto.repository.FoodRepository;
 import com.parkjonghwan.meal_auto.repository.MealEntryRepository;
 import com.parkjonghwan.meal_auto.service.ai.NutritionAnalyzer;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,15 +24,18 @@ public class MealAnalysisService {
   private final FoodRepository foodRepository;
   private final MealEntryRepository mealEntryRepository;
   private final TransactionTemplate transactionTemplate;
+  private final Clock clock;   // 한국 시간 (config/TimeConfig)
 
   public MealAnalysisService(NutritionAnalyzer nutritionAnalyzer,
                              FoodRepository foodRepository,
                              MealEntryRepository mealEntryRepository,
-                             PlatformTransactionManager transactionManager) {
+                             PlatformTransactionManager transactionManager,
+                             Clock clock) {
     this.nutritionAnalyzer = nutritionAnalyzer;
     this.foodRepository = foodRepository;
     this.mealEntryRepository = mealEntryRepository;
     this.transactionTemplate = new TransactionTemplate(transactionManager);
+    this.clock = clock;
   }
 
   public List<MealEntry> recordFromText(Member member, MealTextRequest request) {
@@ -49,7 +53,8 @@ public class MealAnalysisService {
       throw new NoFoodRecognizedException(request.text());
     }
 
-    LocalDate date = request.date() != null ? request.date() : LocalDate.now();
+    // 날짜를 안 보냈으면 한국 날짜로 (서버 시간대가 UTC여도 한국 오전 9시 이전 기록이 전날이 되지 않게)
+    LocalDate date = request.date() != null ? request.date() : LocalDate.now(clock);
 
     // 3) 저장은 트랜잭션 "안"에서 한 번에
     //    중간에 하나라도 실패하면 앞에서 저장한 것까지 전부 취소됨
