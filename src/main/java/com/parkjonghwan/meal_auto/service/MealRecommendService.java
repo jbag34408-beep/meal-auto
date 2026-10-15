@@ -1,6 +1,7 @@
 package com.parkjonghwan.meal_auto.service;
 
 import com.parkjonghwan.meal_auto.domain.Food;
+import com.parkjonghwan.meal_auto.domain.FoodSource;
 import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.dto.DailySummary;
 import com.parkjonghwan.meal_auto.dto.Recommendation;
@@ -56,7 +57,10 @@ public class MealRecommendService {
       return null;
     }
 
-    List<Food> candidates = foodRepository.findAll();
+    // 후보: 공용 음식 + 내 음식만 (다른 회원이 등록하거나 AI로 만든 음식은 제외)
+    List<Food> candidates = foodRepository.findVisibleTo(member).stream()
+        .filter(MealRecommendService::isTrustedFor)
+        .toList();
     Food best = null;
     double bestAmount = 0;
     for (Food food : candidates) {
@@ -85,6 +89,12 @@ public class MealRecommendService {
     String reason = String.format("%s이 목표보다 %.1fg 부족해요", nutrient, lack);
     return new Recommendation(best, grams, reason, nutrient, neededGrams,
         round1(best.getKcalPer100g() * grams / 100), round1(remainingKcal), capped, shortfalls);
+  }
+
+  // 주인 기능 이전에 만들어져 주인을 알 수 없는 AI 음식이 공용으로 남아 있을 수 있음
+  // → 공용인데 AI 출처면 값을 확인할 수 없으므로 추천하지 않음 (내 AI 음식은 내 추천에 써도 됨)
+  private static boolean isTrustedFor(Food food) {
+    return !(food.isShared() && food.getSource() == FoodSource.AI);
   }
 
   private Shortfall shortfall(String nutrient, double target, double eaten,

@@ -2,6 +2,7 @@ package com.parkjonghwan.meal_auto.dto;
 
 import com.parkjonghwan.meal_auto.domain.Food;
 import com.parkjonghwan.meal_auto.domain.FoodSource;
+import com.parkjonghwan.meal_auto.domain.Member;
 
 // AI가 분석한 음식 하나 (영양 정보는 모두 100g 기준, grams는 실제 먹은 양 추정)
 public record AnalyzedFood(
@@ -26,8 +27,8 @@ public record AnalyzedFood(
     return name.strip();
   }
 
-  // 새 음식으로 저장할 때 AI 출처로 Food 생성
-  public Food toFood() {
-    return new Food(normalizedName(), kcalPer100g, carbohydrate, protein, fat, FoodSource.AI);
+  // 새 음식으로 저장할 때 AI 출처의 개인 음식으로 생성 (잘못 추정했을 수 있어 다른 회원과 공유하지 않음)
+  public Food toFood(Member owner) {
+    return new Food(normalizedName(), kcalPer100g, carbohydrate, protein, fat, FoodSource.AI, owner);
   }
 }

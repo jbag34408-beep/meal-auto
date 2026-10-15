@@ -25,7 +25,8 @@ export type Food = {
   carbohydrate: number
   protein: number
   fat: number
-  source?: "USER" | "PUBLIC" | "AI" | string
+  source?: "SEED" | "PUBLIC" | "USER" | "AI" | string
+  shared?: boolean // true: 모두가 쓰는 공용 음식, false: 내 개인 음식
 }
 
 export type MealEntry = { id: number; date: string; mealType: MealType; food: Food; grams: number }
@@ -127,7 +128,12 @@ export async function saveTargets(targets: Targets) {
   await request("/me/targets", json(targets, "PUT"))
 }
 
+// 직접 등록 → 내 개인 음식
 export const createFood = async (food: FoodInput): Promise<Food> => (await request("/foods", json(food))).json()
+
+// 공공데이터 가져오기 → 공용 음식 (영양 값은 서버가 식약처 DB를 다시 조회해서 채움)
+export const importPublicFood = async (food: Pick<PublicFood, "name" | "maker">): Promise<Food> =>
+  (await request("/foods/public", json({ name: food.name, maker: food.maker ?? "" }))).json()
 
 export const searchPublicFoods = async (keyword: string): Promise<PublicFood[]> =>
   (await request(`/foods/public?keyword=${encodeURIComponent(keyword)}`)).json()

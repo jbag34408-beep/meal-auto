@@ -43,7 +43,8 @@ public class MealController {
   @PostMapping("/meals")
   public MealEntry addMeal(Principal principal, @Valid @RequestBody MealEntryRequest request) {
     Member member = memberService.get(principal.getName());
-    Food food = foodRepository.findById(request.foodId())
+    // 다른 회원의 개인 음식은 "없는 음식"처럼 404
+    Food food = foodRepository.findVisibleById(member, request.foodId())
         .orElseThrow(() -> new FoodNotFoundException(request.foodId()));
     return mealEntryRepository.save(new MealEntry(member, orToday(request.date()),
         request.mealType(), food, request.grams()));

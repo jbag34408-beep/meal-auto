@@ -43,6 +43,13 @@ public class GlobalExceptionHandler {
         .body(ErrorResponse.of(404, e.getMessage()));
   }
 
+  // 공공데이터에 없는 음식을 가져오려 함 → 404
+  @ExceptionHandler(PublicFoodNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handlePublicFoodNotFound(PublicFoodNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(ErrorResponse.of(404, e.getMessage()));
+  }
+
   // 같은 이름 음식 → 409 Conflict (이미 있는 것과 충돌)
   @ExceptionHandler(DuplicateFoodException.class)
   public ResponseEntity<ErrorResponse> handleDuplicateFood(DuplicateFoodException e) {

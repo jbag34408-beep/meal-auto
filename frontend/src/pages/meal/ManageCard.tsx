@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react"
 import { ChevronDown } from "lucide-react"
-import { createFood, fmt, saveTargets, searchPublicFoods, type Me, type PublicFood } from "@/lib/meal-api"
+import { createFood, fmt, importPublicFood, saveTargets, searchPublicFoods, type Me, type PublicFood } from "@/lib/meal-api"
 import { Card } from "./parts"
 
 type Props = {
@@ -86,13 +86,7 @@ export function ManageCard({ me, onTargetsSaved, onFoodsChanged }: Props) {
   async function importFood(f: PublicFood, index: number) {
     setPublicError("")
     try {
-      await createFood({
-        name: f.name.slice(0, 50),
-        kcalPer100g: f.kcal,
-        carbohydrate: f.carbohydrate,
-        protein: f.protein,
-        fat: f.fat,
-      })
+      await importPublicFood(f)
       setImported((s) => new Set(s).add(index))
       await onFoodsChanged()
     } catch (err) {

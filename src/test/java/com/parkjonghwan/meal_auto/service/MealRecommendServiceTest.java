@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.parkjonghwan.meal_auto.domain.Food;
+import com.parkjonghwan.meal_auto.domain.FoodSource;
 import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.dto.DailySummary;
 import com.parkjonghwan.meal_auto.dto.Recommendation;
@@ -39,7 +40,7 @@ class MealRecommendServiceTest {
   void setUp() {
     member = new Member("tester", "encoded");
     Mockito.lenient()
-        .when(foodRepository.findAll()).thenReturn(List.of(rice, chicken, almond));
+        .when(foodRepository.findVisibleTo(member)).thenReturn(List.of(rice, chicken, almond));
   }
 
   @Test
@@ -122,5 +123,19 @@ class MealRecommendServiceTest {
     // 72kcal ÷ 아몬드 579kcal × 100 = 12.4 → 12g (지방 부족분 94g보다 적게)
     assertEquals("아몬드", result.getFood().getName());
     assertEquals(12.0, result.getGrams(), 0.001);
+  }
+
+  @Test
+  void 주인을_모르는_공용_AI_음식은_추천하지_않고_내_AI_음식은_추천한다() {
+    // 지방이 가장 부족한 상태
+    DailySummary summary = new DailySummary(today, 3, 628.0, 95.1, 53.2, 3.1);
+    Food sharedAi = new Food("버터(AI)", 717, 0, 1, 81, FoodSource.AI, null);
+    Food myAi = new Food("내버터(AI)", 717, 0, 1, 70, FoodSource.AI, member);
+
+    Mockito.when(foodRepository.findVisibleTo(member)).thenReturn(List.of(rice, chicken, almond, sharedAi));
+    assertEquals("아몬드", recommendService.recommend(summary, member).getFood().getName());
+
+    Mockito.when(foodRepository.findVisibleTo(member)).thenReturn(List.of(rice, chicken, almond, myAi));
+    assertEquals("내버터(AI)", recommendService.recommend(summary, member).getFood().getName());
   }
 }

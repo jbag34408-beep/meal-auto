@@ -17,7 +17,9 @@ import com.parkjonghwan.meal_auto.repository.MealEntryRepository;
 import com.parkjonghwan.meal_auto.repository.MemberRepository;
 import com.parkjonghwan.meal_auto.service.ai.FakeNutritionAnalyzer;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -63,28 +65,38 @@ class MealAnalysisServiceTest {
   @Autowired MemberRepository memberRepository;
 
   private Member member;
+  private final List<Member> createdMembers = new ArrayList<>();
 
   @BeforeEach
   void setUp() {
     fakeAnalyzer.reset();
-    // username은 20자 제한 + unique라서 테스트마다 짧고 겹치지 않는 이름 사용
+    member = newMember();
+  }
+
+  // username은 20자 제한 + unique라서 테스트마다 짧고 겹치지 않는 이름 사용
+  private Member newMember() {
     String username = "t" + (System.nanoTime() % 1_000_000_000L);
-    member = memberRepository.save(new Member(username, "test-password-hash"));
+    Member saved = memberRepository.save(new Member(username, "test-password-hash"));
+    createdMembers.add(saved);
+    return saved;
   }
 
   @AfterEach
   void tearDown() {
+    List<Long> memberIds = createdMembers.stream().map(Member::getId).toList();
     List<MealEntry> mine = mealEntryRepository.findAll().stream()
-        .filter(e -> e.getMember() != null && e.getMember().getId().equals(member.getId()))
+        .filter(e -> e.getMember() != null && memberIds.contains(e.getMember().getId()))
         .toList();
     mealEntryRepository.deleteAll(mine);
 
+    // 개인 음식이 회원을 가리키므로 음식을 먼저 지우고 회원을 지움
     List<Food> testFoods = foodRepository.findAll().stream()
         .filter(f -> f.getName() != null && f.getName().startsWith(TEST_PREFIX))
         .toList();
     foodRepository.deleteAll(testFoods);
 
-    memberRepository.delete(member);
+    memberRepository.deleteAll(createdMembers);
+    createdMembers.clear();
   }
 
   // 100g당 100kcal, 탄 10 / 단 5 / 지 3 인 평범한 음식
@@ -98,6 +110,12 @@ class MealAnalysisServiceTest {
 
   private List<MealEntry> entriesOn(LocalDate date) {
     return mealEntryRepository.findByMemberAndDate(member, date);
+  }
+
+  private Optional<Food> findFood(String name) {
+    return foodRepository.findAll().stream()
+        .filter(f -> f.getName() != null && f.getName().equalsIgnoreCase(name))
+        .findFirst();
   }
 
   private long countFoodsNamed(String name) {
@@ -114,8 +132,9 @@ class MealAnalysisServiceTest {
     List<MealEntry> saved = mealAnalysisService.recordFromText(member, request(DAY));
 
     assertThat(saved).hasSize(1);
-    Food created = foodRepository.findFirstByNameIgnoreCase(TEST_PREFIX + "김치찌개").orElseThrow();
+    Food created = findFood(TEST_PREFIX + "김치찌개").orElseThrow();
     assertThat(created.getSource()).isEqualTo(FoodSource.AI);
+    assertThat(created.isShared()).isFalse();   // AI 음식은 만든 회원의 개인 음식
     assertThat(entriesOn(DAY)).hasSize(1);
     assertThat(entriesOn(DAY).get(0).getGrams()).isEqualTo(300);
   }
@@ -131,6 +150,37 @@ class MealAnalysisServiceTest {
 
     assertThat(countFoodsNamed(TEST_PREFIX + "Kimchi Stew")).isEqualTo(1);
     assertThat(entriesOn(DAY)).hasSize(2);
+  }
+
+  @Test
+  @DisplayName("다른 회원이 AI로 만든 같은 이름의 음식은 재사용하지 않고, 내 목록에도 보이지 않는다")
+  void doesNotShareAiFoodsBetweenMembers() {
+    Member other = newMember();
+    // 다른 회원의 AI가 잘못 추정한 값 (100g당 900kcal)
+    fakeAnalyzer.willReturn(new AnalyzedFood(TEST_PREFIX + "떡볶이", 300, 900, 10, 5, 3));
+    mealAnalysisService.recordFromText(other, request(DAY));
+
+    fakeAnalyzer.willReturn(food(TEST_PREFIX + "떡볶이", 200));
+    List<MealEntry> saved = mealAnalysisService.recordFromText(member, request(DAY));
+
+    assertThat(countFoodsNamed(TEST_PREFIX + "떡볶이")).isEqualTo(2);
+    assertThat(saved.get(0).getFood().getKcalPer100g()).isEqualTo(100);   // 내 분석 값으로 저장
+    assertThat(foodRepository.findVisibleTo(member))
+        .filteredOn(f -> f.getName().equals(TEST_PREFIX + "떡볶이"))
+        .hasSize(1)
+        .allMatch(f -> f.getKcalPer100g() == 100);
+  }
+
+  @Test
+  @DisplayName("공용 음식과 이름이 같으면 공용 음식을 그대로 쓴다")
+  void reusesSharedFood() {
+    Food shared = foodRepository.save(new Food(TEST_PREFIX + "현미밥", 150, 32, 3, 1));
+    fakeAnalyzer.willReturn(food(TEST_PREFIX + "현미밥", 210));
+
+    List<MealEntry> saved = mealAnalysisService.recordFromText(member, request(DAY));
+
+    assertThat(saved.get(0).getFood().getId()).isEqualTo(shared.getId());
+    assertThat(countFoodsNamed(TEST_PREFIX + "현미밥")).isEqualTo(1);
   }
 
   @Test
@@ -154,7 +204,7 @@ class MealAnalysisServiceTest {
     List<MealEntry> saved = mealAnalysisService.recordFromText(member, request(DAY));
 
     assertThat(saved).hasSize(1);
-    assertThat(foodRepository.findFirstByNameIgnoreCase(TEST_PREFIX + "이상한값")).isEmpty();
+    assertThat(findFood(TEST_PREFIX + "이상한값")).isEmpty();
   }
 
   @Test
@@ -181,7 +231,7 @@ class MealAnalysisServiceTest {
         .isInstanceOf(RuntimeException.class);
 
     assertThat(entriesOn(DAY)).isEmpty();
-    assertThat(foodRepository.findFirstByNameIgnoreCase(TEST_PREFIX + "정상음식")).isEmpty();
+    assertThat(findFood(TEST_PREFIX + "정상음식")).isEmpty();
   }
 
   @Test

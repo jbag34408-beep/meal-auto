@@ -56,7 +56,7 @@ public class MealAnalysisService {
     return transactionTemplate.execute(status -> {
       List<MealEntry> saved = new ArrayList<>();
       for (AnalyzedFood item : validFoods) {
-        Food food = findOrCreateFood(item);
+        Food food = findOrCreateFood(member, item);
         saved.add(mealEntryRepository.save(
             new MealEntry(member, date, request.mealType(), food, item.grams())));
       }
@@ -64,9 +64,11 @@ public class MealAnalysisService {
     });
   }
 
-  // 같은 이름(대소문자·앞뒤 공백 무시)의 음식이 있으면 재사용, 없으면 AI 출처로 새로 만듦
-  private Food findOrCreateFood(AnalyzedFood item) {
-    return foodRepository.findFirstByNameIgnoreCase(item.normalizedName())
-        .orElseGet(() -> foodRepository.save(item.toFood()));
+  // 내가 볼 수 있는 음식(내 음식 → 공용 순) 중 같은 이름(대소문자·앞뒤 공백 무시)이 있으면 재사용,
+  // 없으면 AI 출처의 내 개인 음식으로 새로 만듦 (다른 회원의 음식은 쓰지도, 보이지도 않음)
+  private Food findOrCreateFood(Member member, AnalyzedFood item) {
+    return foodRepository.findVisibleByNameIgnoreCase(member, item.normalizedName()).stream()
+        .findFirst()
+        .orElseGet(() -> foodRepository.save(item.toFood(member)));
   }
 }
