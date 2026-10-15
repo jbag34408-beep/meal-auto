@@ -28,6 +28,7 @@ skills-lock.json
 # React 빌드 결과 (frontend에서 npm run build로 생성, 배포 때는 Dockerfile이 생성)
 src/main/resources/static/login.html
 src/main/resources/static/index.html
+src/main/resources/static/landing.html
 src/main/resources/static/assets/
 
 # 디자인 기준 이미지 (로컬 참고용)
