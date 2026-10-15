@@ -37,7 +37,6 @@ export default function LandingPage() {
         <CinematicFooter
           mode="page"
           heading="오늘 먹은 것부터 적어 보세요"
-          giantText="MEAL AUTO"
           marquee={["영양 자동 계산", "다음 끼니 추천", "매일 자동 리포트", "탄수화물 · 단백질 · 지방", "AI 문장 기록"]}
           actions={[
             { label: "시작하기", href: "/login.html", primary: true, icon: <ArrowRight className="h-5 w-5" aria-hidden /> },

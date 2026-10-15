@@ -205,7 +205,7 @@ const linkProps = (l: FooterLink) =>
 
 export type CinematicFooterProps = {
   heading: React.ReactNode
-  giantText: string
+  giantText?: string // 뒤에 깔리는 큰 글자 (없으면 안 그림)
   marquee: string[]
   actions: FooterLink[] // 큰 알약 버튼
   links?: FooterLink[] // 작은 보조 링크
@@ -253,7 +253,8 @@ export function CinematicFooter({
     const ctx = gsap.context(() => {
       if (isPage) {
         // 처음 열릴 때: 큰 글자가 올라오고, 제목·버튼이 차례로 떠오름
-        gsap.fromTo(giantTextRef.current, { y: "10vh", scale: 0.85, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 1.6, ease: "power3.out" })
+        if (giantTextRef.current)
+          gsap.fromTo(giantTextRef.current, { y: "10vh", scale: 0.85, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 1.6, ease: "power3.out" })
         gsap.fromTo(
           [headingRef.current, linksRef.current],
           { y: 40, opacity: 0 },
@@ -261,17 +262,19 @@ export function CinematicFooter({
         )
         return
       }
-      gsap.fromTo(
-        giantTextRef.current,
-        { y: "10vh", scale: 0.8, opacity: 0 },
-        {
-          y: "0vh",
-          scale: 1,
-          opacity: 1,
-          ease: "power1.out",
-          scrollTrigger: { trigger: rootRef.current, start: "top 80%", end: "bottom bottom", scrub: 1 },
-        }
-      )
+      if (giantTextRef.current) {
+        gsap.fromTo(
+          giantTextRef.current,
+          { y: "10vh", scale: 0.8, opacity: 0 },
+          {
+            y: "0vh",
+            scale: 1,
+            opacity: 1,
+            ease: "power1.out",
+            scrollTrigger: { trigger: rootRef.current, start: "top 80%", end: "bottom bottom", scrub: 1 },
+          }
+        )
+      }
       gsap.fromTo(
         [headingRef.current, linksRef.current],
         { y: 50, opacity: 0 },
@@ -299,13 +302,15 @@ export function CinematicFooter({
         </>
       )}
 
-      <div
-        ref={giantTextRef}
-        aria-hidden
-        className="footer-giant-bg-text pointer-events-none absolute -bottom-[5vh] left-1/2 z-0 -translate-x-1/2 whitespace-nowrap select-none"
-      >
-        {giantText}
-      </div>
+      {giantText && (
+        <div
+          ref={giantTextRef}
+          aria-hidden
+          className="footer-giant-bg-text pointer-events-none absolute -bottom-[5vh] left-1/2 z-0 -translate-x-1/2 whitespace-nowrap select-none"
+        >
+          {giantText}
+        </div>
+      )}
 
       <div className="footer-marquee absolute left-0 top-12 z-10 w-full -rotate-2 scale-110 overflow-hidden py-4 shadow-2xl" aria-hidden>
         <div className="animate-footer-scroll-marquee flex w-max text-xs font-medium tracking-[0.14em] uppercase md:text-sm">
