@@ -51,7 +51,6 @@ export type Nutrition = { kcal: number; carbohydrate: number; protein: number; f
 // 상차림의 음식 하나 (예: 잡곡밥 158g)
 export type MealPlanItem = {
   food: Food
-  category: FoodCategory
   categoryLabel: string // 밥, 국·찌개, 주반찬, 나물·볶음, 김치
   grams: number
   nutrition: Nutrition

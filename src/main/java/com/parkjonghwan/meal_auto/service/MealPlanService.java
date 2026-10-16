@@ -189,8 +189,7 @@ public class MealPlanService {
     List<MealPlanItem> items = new ArrayList<>();
     for (Pick p : best) {
       total = total.plus(p.nutrition());
-      FoodCategory category = p.food().getCategory();
-      items.add(new MealPlanItem(p.food(), category, category.label(), p.grams(), p.nutrition().rounded(),
+      items.add(new MealPlanItem(p.food(), p.food().getCategory().label(), p.grams(), p.nutrition().rounded(),
           p.food().getId() != null && recent.contains(p.food().getId())));
     }
     return new MealPlan(meal, target.rounded(), total.rounded(), items);
