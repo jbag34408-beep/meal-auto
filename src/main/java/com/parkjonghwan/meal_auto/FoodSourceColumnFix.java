@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 // - H2: 열 타입이 ENUM('AI','SEED') → 일반 문자열로 바꿈
 // - PostgreSQL: food_source_check 제약 → 지움
 // 어느 쪽이든 이미 풀려 있으면 아무것도 안 함 (서버를 켤 때마다 실행해도 안전)
-// DataInitializer(주인 정리 때 USER 값을 씀)보다 먼저 실행
+// DataInitializer(기본 음식에 category 값을 씀)보다 먼저 실행
 @Component
 @Order(0)
 public class FoodSourceColumnFix implements CommandLineRunner {

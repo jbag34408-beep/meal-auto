@@ -42,11 +42,6 @@ public class MealEntry {
     this(null, date, mealType, food, grams);
   }
 
-  // 회원 기능 이전에 저장된 기록을 회원에게 넘길 때 사용
-  public void assignMember(Member member) {
-    this.member = member;
-  }
-
   public Long getId() { return id; }
   public Member getMember() { return member; }
   public LocalDate getDate() { return date; }

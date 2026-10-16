@@ -97,9 +97,4 @@ public class Food {
     return this;
   }
 
-  // 주인 기능 이전에 만들어진 음식을 실제 주인에게 넘길 때만 사용 (DataInitializer)
-  public void assignOwner(Member owner, FoodSource source) {
-    this.owner = owner;
-    this.source = source;
-  }
 }
