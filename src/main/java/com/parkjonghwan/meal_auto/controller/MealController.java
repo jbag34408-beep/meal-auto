@@ -6,10 +6,12 @@ import com.parkjonghwan.meal_auto.domain.Member;
 import com.parkjonghwan.meal_auto.dto.DailySummary;
 import com.parkjonghwan.meal_auto.dto.MealBulkRequest;
 import com.parkjonghwan.meal_auto.dto.MealEntryRequest;
+import com.parkjonghwan.meal_auto.dto.MealPlanResponse;
 import com.parkjonghwan.meal_auto.dto.Recommendation;
 import com.parkjonghwan.meal_auto.exception.FoodNotFoundException;
 import com.parkjonghwan.meal_auto.repository.FoodRepository;
 import com.parkjonghwan.meal_auto.repository.MealEntryRepository;
+import com.parkjonghwan.meal_auto.service.MealPlanService;
 import com.parkjonghwan.meal_auto.service.MealRecommendService;
 import com.parkjonghwan.meal_auto.service.MealSummaryService;
 import com.parkjonghwan.meal_auto.service.MemberService;
@@ -30,6 +32,7 @@ public class MealController {
   private final MealEntryRepository mealEntryRepository;
   private final MealSummaryService summaryService;
   private final MealRecommendService recommendService;
+  private final MealPlanService mealPlanService;
   private final MemberService memberService;
   private final Clock clock;   // 한국 시간 (config/TimeConfig)
 
@@ -37,12 +40,14 @@ public class MealController {
                         MealEntryRepository mealEntryRepository,
                         MealSummaryService summaryService,
                         MealRecommendService recommendService,
+                        MealPlanService mealPlanService,
                         MemberService memberService,
                         Clock clock) {
     this.foodRepository = foodRepository;
     this.mealEntryRepository = mealEntryRepository;
     this.summaryService = summaryService;
     this.recommendService = recommendService;
+    this.mealPlanService = mealPlanService;
     this.memberService = memberService;
     this.clock = clock;
   }
@@ -50,9 +55,7 @@ public class MealController {
   @PostMapping("/meals")
   public MealEntry addMeal(Principal principal, @Valid @RequestBody MealEntryRequest request) {
     Member member = memberService.get(principal.getName());
-    // 다른 회원의 개인 음식은 "없는 음식"처럼 404
-    Food food = foodRepository.findVisibleById(member, request.foodId())
-        .orElseThrow(() -> new FoodNotFoundException(request.foodId()));
+    Food food = visibleFood(member, request.foodId());
     return mealEntryRepository.save(new MealEntry(member, orToday(request.date()),
         request.mealType(), food, request.grams()));
   }
@@ -65,8 +68,7 @@ public class MealController {
     LocalDate date = orToday(request.date());
     List<MealEntry> saved = new ArrayList<>();
     for (MealBulkRequest.Item item : request.items()) {
-      Food food = foodRepository.findVisibleById(member, item.foodId())
-          .orElseThrow(() -> new FoodNotFoundException(item.foodId()));
+      Food food = visibleFood(member, item.foodId());
       saved.add(mealEntryRepository.save(new MealEntry(member, date, request.mealType(), food, item.grams())));
     }
     return saved;
@@ -105,6 +107,19 @@ public class MealController {
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
     Member member = memberService.get(principal.getName());
     return recommendService.recommend(summaryService.summarizeDay(member, orToday(date)), member);
+  }
+
+  // GET /meal-plan?date=2026-10-15 → 아직 안 먹은 아침·점심·저녁의 한식 상차림 추천
+  @GetMapping("/meal-plan")
+  public MealPlanResponse mealPlan(Principal principal,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    return mealPlanService.plan(memberService.get(principal.getName()), orToday(date));
+  }
+
+  // 다른 회원의 개인 음식은 "없는 음식"처럼 404
+  private Food visibleFood(Member member, Long foodId) {
+    return foodRepository.findVisibleById(member, foodId)
+        .orElseThrow(() -> new FoodNotFoundException(foodId));
   }
 
   private LocalDate orToday(LocalDate date) {

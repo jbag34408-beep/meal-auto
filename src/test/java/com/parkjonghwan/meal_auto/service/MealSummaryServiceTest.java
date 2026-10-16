@@ -29,7 +29,7 @@ class MealSummaryServiceTest {
 
   @BeforeEach
   void setUp() {
-    summaryService = new MealSummaryService(new NutritionCalculator(), mealEntryRepository);
+    summaryService = new MealSummaryService(mealEntryRepository);
   }
 
   @Test

@@ -67,5 +67,5 @@ com.parkjonghwan.meal_auto
 ├── dto          DailySummary, MealEntryRequest, Recommendation
 ├── repository   FoodRepository, MealEntryRepository
 ├── scheduler    DailyMealScheduler
-└── service      MealRecommendService, MealSummaryService, NutritionCalculator
+└── service      MealRecommendService, MealSummaryService
 ```
