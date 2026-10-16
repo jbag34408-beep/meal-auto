@@ -45,6 +45,10 @@ Render 무료 인스턴스는 재배포·재시작 때 디스크가 초기화돼
   - 기본 음식 목록: `src/main/resources/seed/foods.csv` (곡류·고기·생선·콩·유제품·견과·과일·채소 68가지, 100g 기준 영양 값과 1인분 g)
   - 서버가 시작할 때 DB에 없는 이름만 추가해요 (이미 있는 음식 값은 그대로) → 목록에 줄을 추가하고 배포하면 운영 DB에도 들어가요
   - 공공데이터는 `FOOD_API_KEY`가 있어야 쓸 수 있고, 없으면 화면에 "지금은 사용할 수 없어요"로 안내해요
+  - data.go.kr은 해외 IP 요청을 막아서, 싱가포르의 Render 서버는 서울 중계(`relay/`, Vercel 함수)를 거쳐 불러요
+    1. Vercel에서 이 저장소를 새 프로젝트로 가져오고 Root Directory를 `relay`로 지정 → 배포 (`relay/vercel.json`이 서울 `icn1` 리전으로 고정)
+    2. Render 환경 변수 `FOOD_API_BASE_URL` = `https://<vercel 프로젝트 주소>/api/food`
+    - 로컬(한국)에서는 안 넣으면 data.go.kr을 바로 불러요
 - 개인: 직접 등록(USER), AI 추정(AI) → 만든 회원만 씀 (`food.member_id`), 다른 회원의 목록·추천에 섞이지 않음
 
 ## 식단 추천 (한식 상차림)
