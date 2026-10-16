@@ -2,28 +2,11 @@ package com.parkjonghwan.meal_auto.dto;
 
 import java.time.LocalDate;
 
-public class DailySummary {
-  private LocalDate date;
-  private int mealCount;
-  private double totalKcal;
-  private double totalCarbohydrate;
-  private double totalProtein;
-  private double totalFat;
+public record DailySummary(LocalDate date, int mealCount, double totalKcal,
+                           double totalCarbohydrate, double totalProtein, double totalFat) {
 
-  public DailySummary(LocalDate date, int mealCount, double totalKcal,
-                      double totalCarbohydrate, double totalProtein, double totalFat) {
-    this.date = date;
-    this.mealCount = mealCount;
-    this.totalKcal = totalKcal;
-    this.totalCarbohydrate = totalCarbohydrate;
-    this.totalProtein = totalProtein;
-    this.totalFat = totalFat;
+  // 서버 안에서 쓰는 지름길 (JSON에는 안 나감)
+  public Nutrition total() {
+    return new Nutrition(totalKcal, totalCarbohydrate, totalProtein, totalFat);
   }
-
-  public LocalDate getDate() { return date; }
-  public int getMealCount() { return mealCount; }
-  public double getTotalKcal() { return totalKcal; }
-  public double getTotalCarbohydrate() { return totalCarbohydrate; }
-  public double getTotalProtein() { return totalProtein; }
-  public double getTotalFat() { return totalFat; }
 }

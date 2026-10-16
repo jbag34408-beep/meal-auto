@@ -1,6 +1,6 @@
 # meal-auto
 
-Spring Boot로 만든 식단 자동화 서비스예요. 영양 계산, 하루 요약, 다음 끼니 추천, 매일 자동 리포트를 지원해요.
+Spring Boot로 만든 식단 자동화 서비스예요. 영양 계산, 하루 요약, 끼니별 한식 상차림 추천을 지원해요.
 
 ## 기술
 Java 17 · Spring Boot 4.1.1 · Spring Data JPA · PostgreSQL (배포) / H2 파일 DB (로컬) · React + Vite (화면)
@@ -39,7 +39,6 @@ Render 무료 인스턴스는 재배포·재시작 때 디스크가 초기화돼
 | GET | `/summary?date=` | 하루 영양 요약 |
 | GET | `/meal-plan?date=` | 남은 끼니(아침·점심·저녁) 한식 상차림 추천 |
 | POST | `/meals/bulk` | 상차림을 한 번에 기록 `{"mealType":"LUNCH","items":[{"foodId":1,"grams":210}]}` |
-| GET | `/recommendation?date=` | 가장 부족한 영양소를 채울 음식 하나 (매일 밤 리포트용) |
 
 ## 음식 데이터 (공용 · 개인)
 - 공용: 기본 음식(SEED), 식약처 공공데이터(PUBLIC) → 모든 회원이 목록·기록·추천에 씀
@@ -55,17 +54,13 @@ Render 무료 인스턴스는 재배포·재시작 때 디스크가 초기화돼
   - 같은 날 국·주반찬·나물이 겹치지 않고, 최근 3일 안에 먹은 메뉴는 덜 골라요
 - 메뉴는 기본 음식 목록(`seed/foods.csv`)의 상차림 분류(RICE·SOUP·MAIN·SIDE·KIMCHI)가 있는 음식이에요
 
-## 자동 실행
-`DailyMealScheduler`가 매일 21:00(Asia/Seoul)에 요약과 추천을 로그로 남겨요.
-
 ## 패키지 구조
 ```
 com.parkjonghwan.meal_auto
 ├── MealAutoApplication, DataInitializer
 ├── controller   MealController
 ├── domain       Food, MealEntry, MealType
-├── dto          DailySummary, MealEntryRequest, Recommendation
+├── dto          DailySummary, MealEntryRequest, MealPlan, Nutrition
 ├── repository   FoodRepository, MealEntryRepository
-├── scheduler    DailyMealScheduler
-└── service      MealRecommendService, MealSummaryService
+└── service      MealPlanService, MealSummaryService
 ```

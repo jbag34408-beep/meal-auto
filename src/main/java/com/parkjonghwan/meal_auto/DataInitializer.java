@@ -109,7 +109,6 @@ public class DataInitializer implements CommandLineRunner {
   // 예전에는 모든 음식이 공용이라, 회원이 직접 등록하거나 AI로 만든 음식도 주인 없이 저장됨
   // 기본 음식·공공데이터가 아닌 음식 중 기록한 회원이 딱 한 명이면 그 회원의 개인 음식으로 옮김
   // - 기록한 회원이 없거나 여러 명이면 누구 것인지 알 수 없어 공용으로 둠
-  //   (그중 AI 음식은 MealRecommendService가 추천 후보에서 뺌)
   // - 직접 등록과 공공데이터 가져오기는 예전 데이터로는 구분이 안 돼 USER로 표시
   private void assignLegacyFoodOwners() {
     int moved = 0;

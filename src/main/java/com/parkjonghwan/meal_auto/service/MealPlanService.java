@@ -71,9 +71,7 @@ public class MealPlanService {
     var summary = summaryService.summarizeDay(member, date);
     Nutrition target = new Nutrition(member.getTargetKcal(), member.getTargetCarbohydrate(),
         member.getTargetProtein(), member.getTargetFat());
-    Nutrition eaten = new Nutrition(summary.getTotalKcal(), summary.getTotalCarbohydrate(),
-        summary.getTotalProtein(), summary.getTotalFat());
-    Nutrition remaining = target.minusFloorZero(eaten);
+    Nutrition remaining = target.minusFloorZero(summary.total());
 
     List<MealType> open = openMeals(member, date);
     if (open.isEmpty()) {

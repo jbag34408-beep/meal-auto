@@ -7,12 +7,10 @@ import com.parkjonghwan.meal_auto.dto.DailySummary;
 import com.parkjonghwan.meal_auto.dto.MealBulkRequest;
 import com.parkjonghwan.meal_auto.dto.MealEntryRequest;
 import com.parkjonghwan.meal_auto.dto.MealPlanResponse;
-import com.parkjonghwan.meal_auto.dto.Recommendation;
 import com.parkjonghwan.meal_auto.exception.FoodNotFoundException;
 import com.parkjonghwan.meal_auto.repository.FoodRepository;
 import com.parkjonghwan.meal_auto.repository.MealEntryRepository;
 import com.parkjonghwan.meal_auto.service.MealPlanService;
-import com.parkjonghwan.meal_auto.service.MealRecommendService;
 import com.parkjonghwan.meal_auto.service.MealSummaryService;
 import com.parkjonghwan.meal_auto.service.MemberService;
 import jakarta.validation.Valid;
@@ -31,7 +29,6 @@ public class MealController {
   private final FoodRepository foodRepository;
   private final MealEntryRepository mealEntryRepository;
   private final MealSummaryService summaryService;
-  private final MealRecommendService recommendService;
   private final MealPlanService mealPlanService;
   private final MemberService memberService;
   private final Clock clock;   // 한국 시간 (config/TimeConfig)
@@ -39,14 +36,12 @@ public class MealController {
   public MealController(FoodRepository foodRepository,
                         MealEntryRepository mealEntryRepository,
                         MealSummaryService summaryService,
-                        MealRecommendService recommendService,
                         MealPlanService mealPlanService,
                         MemberService memberService,
                         Clock clock) {
     this.foodRepository = foodRepository;
     this.mealEntryRepository = mealEntryRepository;
     this.summaryService = summaryService;
-    this.recommendService = recommendService;
     this.mealPlanService = mealPlanService;
     this.memberService = memberService;
     this.clock = clock;
@@ -100,13 +95,6 @@ public class MealController {
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
     Member member = memberService.get(principal.getName());
     return summaryService.summarizeDay(member, orToday(date));
-  }
-
-  @GetMapping("/recommendation")
-  public Recommendation recommendation(Principal principal,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-    Member member = memberService.get(principal.getName());
-    return recommendService.recommend(summaryService.summarizeDay(member, orToday(date)), member);
   }
 
   // GET /meal-plan?date=2026-10-15 → 아직 안 먹은 아침·점심·저녁의 한식 상차림 추천

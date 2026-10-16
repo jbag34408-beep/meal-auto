@@ -44,11 +44,11 @@ class MealSummaryServiceTest {
 
     DailySummary summary = summaryService.summarizeDay(member, today);
 
-    assertEquals(3, summary.getMealCount());
-    assertEquals(628.0, summary.getTotalKcal(), 0.001);
-    assertEquals(95.1, summary.getTotalCarbohydrate(), 0.001);
-    assertEquals(53.2, summary.getTotalProtein(), 0.001);
-    assertEquals(3.1, summary.getTotalFat(), 0.001);
+    assertEquals(3, summary.mealCount());
+    assertEquals(628.0, summary.totalKcal(), 0.001);
+    assertEquals(95.1, summary.totalCarbohydrate(), 0.001);
+    assertEquals(53.2, summary.totalProtein(), 0.001);
+    assertEquals(3.1, summary.totalFat(), 0.001);
   }
 
   @Test
@@ -57,7 +57,7 @@ class MealSummaryServiceTest {
 
     DailySummary summary = summaryService.summarizeDay(member, today);
 
-    assertEquals(0, summary.getMealCount());
-    assertEquals(0.0, summary.getTotalKcal(), 0.001);
+    assertEquals(0, summary.mealCount());
+    assertEquals(0.0, summary.totalKcal(), 0.001);
   }
 }
