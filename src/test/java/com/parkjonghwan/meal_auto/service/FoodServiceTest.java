@@ -13,13 +13,14 @@ import static org.mockito.Mockito.when;
 import com.parkjonghwan.meal_auto.domain.Food;
 import com.parkjonghwan.meal_auto.domain.FoodSource;
 import com.parkjonghwan.meal_auto.domain.Member;
+import com.parkjonghwan.meal_auto.domain.PublicFood;
 import com.parkjonghwan.meal_auto.dto.FoodRequest;
-import com.parkjonghwan.meal_auto.dto.FoodSearchResult;
 import com.parkjonghwan.meal_auto.dto.PublicFoodImportRequest;
 import com.parkjonghwan.meal_auto.exception.DuplicateFoodException;
 import com.parkjonghwan.meal_auto.exception.InvalidNutritionException;
 import com.parkjonghwan.meal_auto.exception.PublicFoodNotFoundException;
 import com.parkjonghwan.meal_auto.repository.FoodRepository;
+import com.parkjonghwan.meal_auto.repository.PublicFoodRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ class FoodServiceTest {
   private FoodRepository foodRepository;
 
   @Mock
-  private PublicFoodClient publicFoodClient;
+  private PublicFoodRepository publicFoodRepository;
 
   @InjectMocks
   private FoodService foodService;
@@ -82,10 +83,9 @@ class FoodServiceTest {
   }
 
   @Test
-  void 공공데이터_가져오기는_서버가_다시_조회한_값으로_공용_음식을_만든다() {
-    when(publicFoodClient.search("사과")).thenReturn(List.of(
-        new FoodSearchResult("사과즙", "", "100g", 45, 11, 0.1, 0),
-        new FoodSearchResult("사과", "", "100g", 52, 14, 0.3, 0.2)));
+  void 공공데이터_가져오기는_내장된_식약처_DB에서_다시_찾은_값으로_공용_음식을_만든다() {
+    when(publicFoodRepository.findFirstByNameAndMaker("사과", "")).thenReturn(
+        Optional.of(new PublicFood("사과", "", "100g", 52, 14, 0.3, 0.2)));
     when(foodRepository.findFirstByOwnerIsNullAndNameIgnoreCase("사과")).thenReturn(Optional.empty());
     when(foodRepository.save(any(Food.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -99,8 +99,8 @@ class FoodServiceTest {
   @Test
   void 같은_이름의_공용_음식이_있으면_새로_만들지_않는다() {
     Food existing = new Food("사과", 52, 14, 0.3, 0.2);
-    when(publicFoodClient.search("사과")).thenReturn(List.of(
-        new FoodSearchResult("사과", null, "100g", 52, 14, 0.3, 0.2)));
+    when(publicFoodRepository.findFirstByNameAndMaker("사과", "")).thenReturn(
+        Optional.of(new PublicFood("사과", "", "100g", 52, 14, 0.3, 0.2)));
     when(foodRepository.findFirstByOwnerIsNullAndNameIgnoreCase("사과")).thenReturn(Optional.of(existing));
 
     assertSame(existing, foodService.importPublic(new PublicFoodImportRequest("사과", "")));
@@ -109,7 +109,7 @@ class FoodServiceTest {
 
   @Test
   void 공공데이터에_없는_음식은_가져올_수_없다() {
-    when(publicFoodClient.search("가짜음식")).thenReturn(List.of());
+    when(publicFoodRepository.findFirstByNameAndMaker("가짜음식", "")).thenReturn(Optional.empty());
 
     assertThrows(PublicFoodNotFoundException.class,
         () -> foodService.importPublic(new PublicFoodImportRequest("가짜음식", "")));

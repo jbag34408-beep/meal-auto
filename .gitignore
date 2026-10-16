@@ -34,3 +34,6 @@ src/main/resources/static/assets/
 # 디자인 기준 이미지 (로컬 참고용)
 docs/*.png
 docs/*.png
+
+# 식약처 DB 내보내기 결과 (scripts/export-public-foods.js)
+public-foods*.tsv

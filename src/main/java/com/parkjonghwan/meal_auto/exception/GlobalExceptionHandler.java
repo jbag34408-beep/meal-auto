@@ -57,13 +57,6 @@ public class GlobalExceptionHandler {
         .body(ErrorResponse.of(400, e.getMessage()));
   }
 
-  // 외부 API 실패 → 502 Bad Gateway (중간 서버가 외부 서버로부터 제대로 된 응답을 못 받음)
-  @ExceptionHandler(ExternalApiException.class)
-  public ResponseEntity<ErrorResponse> handleExternalApi(ExternalApiException e) {
-    return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-        .body(ErrorResponse.of(502, e.getMessage()));
-  }
-
   // AI 분석 사용 불가 (키 없음, 무료 한도 초과, AI 장애) → 503 Service Unavailable
   // 예외 메시지에는 "키가 잘못됨" 같은 내부 사정이 담길 수 있어 사용자에게는 고정 안내만 보냄
   // 화면에서는 이 응답을 받으면 "음식 직접 선택" 흐름으로 넘기면 됨

@@ -49,7 +49,7 @@ export function ManageCard({ me, onTargetsSaved, onFoodsChanged }: Props) {
   const [foodMsg, setFoodMsg] = useState({ error: "", ok: "" })
   const [publicAvailable, setPublicAvailable] = useState<boolean | null>(null)
 
-  // 공공데이터 API 키가 없는 서버면 검색 대신 안내를 보여 줌
+  // 식약처 DB를 아직 안 넣은 서버면 검색 대신 안내를 보여 줌
   useEffect(() => {
     getPublicFoodStatus()
       .then((s) => setPublicAvailable(s.available))
@@ -162,7 +162,7 @@ export function ManageCard({ me, onTargetsSaved, onFoodsChanged }: Props) {
         >
           {publicAvailable === false ? (
             <p className="meal-empty is-left">
-              서버에 공공데이터 API 키가 없어서 지금은 식약처 DB를 검색할 수 없어요. 자주 먹는 기본 음식 60여 가지는
+              식약처 DB가 아직 준비되지 않아 지금은 검색할 수 없어요. 자주 먹는 기본 음식 60여 가지는
               이미 들어 있으니 "직접 입력하기"에서 골라 보세요. 없는 음식은 아래 "내 음식 등록"으로 추가할 수 있어요.
             </p>
           ) : (
